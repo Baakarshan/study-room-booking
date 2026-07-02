@@ -1,0 +1,111 @@
+erDiagram
+    sys_user ||--o| seatflow_user_profile : has
+    sys_user ||--o{ seatflow_reservation : creates
+    sys_user ||--o{ seatflow_checkin_record : checks
+    sys_user ||--o{ seatflow_blacklist : may_enter
+    seatflow_campus ||--o{ seatflow_building : contains
+    seatflow_building ||--o{ seatflow_floor : contains
+    seatflow_floor ||--o{ seatflow_room : contains
+    seatflow_room ||--o{ seatflow_seat : contains
+    seatflow_seat ||--o{ seatflow_reservation : reserved_by
+    seatflow_reservation ||--o| seatflow_checkin_record : produces
+    seatflow_reservation ||--o{ seatflow_violation_record : may_produce
+    seatflow_violation_record ||--o| seatflow_blacklist : may_trigger
+
+    sys_user {
+      bigint user_id PK
+      varchar user_name
+      varchar nick_name
+      char status
+    }
+
+    seatflow_user_profile {
+      bigint profile_id PK
+      bigint user_id
+      varchar student_no
+      int violation_count
+      varchar blacklist_flag
+    }
+
+    seatflow_campus {
+      bigint campus_id PK
+      varchar campus_name
+      varchar address
+      varchar status
+    }
+
+    seatflow_building {
+      bigint building_id PK
+      bigint campus_id
+      varchar building_name
+      int floor_count
+      varchar status
+    }
+
+    seatflow_floor {
+      bigint floor_id PK
+      bigint building_id
+      int floor_number
+      varchar floor_name
+      varchar status
+    }
+
+    seatflow_room {
+      bigint room_id PK
+      bigint floor_id
+      varchar room_name
+      int row_count
+      int col_count
+      int total_seats
+      time open_time
+      time close_time
+      varchar status
+    }
+
+    seatflow_seat {
+      bigint seat_id PK
+      bigint room_id
+      varchar seat_no
+      int row_num
+      int col_num
+      varchar status
+    }
+
+    seatflow_reservation {
+      bigint reservation_id PK
+      bigint user_id
+      bigint room_id
+      bigint seat_id
+      datetime start_time
+      datetime end_time
+      datetime check_deadline
+      varchar status
+      datetime cancel_time
+    }
+
+    seatflow_checkin_record {
+      bigint checkin_id PK
+      bigint reservation_id
+      bigint user_id
+      datetime checkin_time
+      varchar status
+    }
+
+    seatflow_violation_record {
+      bigint violation_id PK
+      bigint reservation_id
+      bigint user_id
+      varchar reason
+      datetime violation_time
+      varchar status
+    }
+
+    seatflow_blacklist {
+      bigint blacklist_id PK
+      bigint user_id
+      bigint violation_id
+      varchar reason
+      datetime start_time
+      datetime end_time
+      varchar status
+    }
