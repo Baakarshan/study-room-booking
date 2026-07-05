@@ -148,7 +148,7 @@ create table seatflow_checkin_record (
   update_time     datetime                             comment '更新时间',
   remark          varchar(500) default null            comment '备注',
   primary key (checkin_id),
-  key idx_seatflow_checkin_reservation (reservation_id),
+  unique key uk_seatflow_checkin_reservation (reservation_id),
   key idx_seatflow_checkin_user (user_id)
 ) engine=innodb comment = 'SeatFlow签到记录表';
 
@@ -167,7 +167,7 @@ create table seatflow_violation_record (
   remark          varchar(500) default null            comment '备注',
   primary key (violation_id),
   key idx_seatflow_violation_user (user_id),
-  key idx_seatflow_violation_reservation (reservation_id)
+  unique key uk_seatflow_violation_reservation (reservation_id)
 ) engine=innodb comment = 'SeatFlow爽约记录表';
 
 drop table if exists seatflow_blacklist;
@@ -185,7 +185,7 @@ create table seatflow_blacklist (
   update_time    datetime                             comment '更新时间',
   remark         varchar(500) default null            comment '备注',
   primary key (blacklist_id),
-  key idx_seatflow_blacklist_user (user_id, status)
+  unique key uk_seatflow_blacklist_user_status (user_id, status)
 ) engine=innodb comment = 'SeatFlow黑名单表';
 
 -- ----------------------------
@@ -220,7 +220,18 @@ insert into sys_role_menu values ('3', '2003');
 insert into sys_role_menu values ('3', '2004');
 
 -- ----------------------------
--- 5、演示空间数据
+-- 5、SeatFlow 定时任务
+-- ----------------------------
+delete from sys_job where job_name = 'SeatFlow超时未签到释放' and job_group = 'SEATFLOW';
+insert into sys_job
+  (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status,
+   create_by, create_time, remark)
+values
+  ('SeatFlow超时未签到释放', 'SEATFLOW', 'seatFlowControlTask.releaseExpiredReservations()',
+   '0 * * * * ?', '2', '1', '0', 'admin', sysdate(), '每分钟释放超时预约并累计爽约');
+
+-- ----------------------------
+-- 6、演示空间数据
 -- ----------------------------
 insert into seatflow_campus values(1, '主校区', '教学楼片区', 'enabled', 'admin', sysdate(), '', null, '演示校区');
 insert into seatflow_campus values(2, '图书馆校区', '图书馆片区', 'enabled', 'admin', sysdate(), '', null, '演示校区');

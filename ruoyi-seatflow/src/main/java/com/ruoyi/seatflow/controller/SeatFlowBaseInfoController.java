@@ -24,8 +24,10 @@ public class SeatFlowBaseInfoController extends BaseController
     @PreAuthorize("@ss.hasPermi('seatflow:base:campus:list')")
     @GetMapping("/campus/list")
     public TableDataInfo campusList(SeatFlowCampus query) { startPage(); return getDataTable(service.selectCampusList(query)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:campus:list')")
     @GetMapping("/campus/options")
     public AjaxResult campusOptions() { return success(service.selectCampusList(new SeatFlowCampus())); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:campus:list')")
     @GetMapping("/campus/{id}") public AjaxResult campus(@PathVariable Long id) { return success(service.selectCampusById(id)); }
     @PreAuthorize("@ss.hasPermi('seatflow:base:campus:add')") @Log(title="校区管理", businessType=BusinessType.INSERT)
     @PostMapping("/campus") public AjaxResult addCampus(@Validated @RequestBody SeatFlowCampus e) { e.setCreateBy(getUsername()); return toAjax(service.saveCampus(e)); }
@@ -36,7 +38,9 @@ public class SeatFlowBaseInfoController extends BaseController
 
     @PreAuthorize("@ss.hasPermi('seatflow:base:building:list')") @GetMapping("/building/list")
     public TableDataInfo buildingList(SeatFlowBuilding q) { startPage(); return getDataTable(service.selectBuildingList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:building:list')")
     @GetMapping("/building/options") public AjaxResult buildingOptions(SeatFlowBuilding q) { return success(service.selectBuildingList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:building:list')")
     @GetMapping("/building/{id}") public AjaxResult building(@PathVariable Long id) { return success(service.selectBuildingById(id)); }
     @PreAuthorize("@ss.hasPermi('seatflow:base:building:add')") @Log(title="楼栋管理", businessType=BusinessType.INSERT)
     @PostMapping("/building") public AjaxResult addBuilding(@Validated @RequestBody SeatFlowBuilding e) { e.setCreateBy(getUsername()); return toAjax(service.saveBuilding(e)); }
@@ -47,7 +51,9 @@ public class SeatFlowBaseInfoController extends BaseController
 
     @PreAuthorize("@ss.hasPermi('seatflow:base:floor:list')") @GetMapping("/floor/list")
     public TableDataInfo floorList(SeatFlowFloor q) { startPage(); return getDataTable(service.selectFloorList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:floor:list')")
     @GetMapping("/floor/options") public AjaxResult floorOptions(SeatFlowFloor q) { return success(service.selectFloorList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:floor:list')")
     @GetMapping("/floor/{id}") public AjaxResult floor(@PathVariable Long id) { return success(service.selectFloorById(id)); }
     @PreAuthorize("@ss.hasPermi('seatflow:base:floor:add')") @Log(title="楼层管理", businessType=BusinessType.INSERT)
     @PostMapping("/floor") public AjaxResult addFloor(@Validated @RequestBody SeatFlowFloor e) { e.setCreateBy(getUsername()); return toAjax(service.saveFloor(e)); }
@@ -58,7 +64,9 @@ public class SeatFlowBaseInfoController extends BaseController
 
     @PreAuthorize("@ss.hasPermi('seatflow:base:room:list')") @GetMapping("/room/list")
     public TableDataInfo roomList(SeatFlowRoom q) { startPage(); return getDataTable(service.selectRoomList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:room:list')")
     @GetMapping("/room/options") public AjaxResult roomOptions(SeatFlowRoom q) { return success(service.selectRoomList(q)); }
+    @PreAuthorize("@ss.hasPermi('seatflow:base:room:list')")
     @GetMapping("/room/{id}") public AjaxResult room(@PathVariable Long id) { return success(service.selectRoomById(id)); }
     @PreAuthorize("@ss.hasPermi('seatflow:base:room:add')") @Log(title="自习室管理", businessType=BusinessType.INSERT)
     @PostMapping("/room") public AjaxResult addRoom(@Validated @RequestBody SeatFlowRoom e) { e.setCreateBy(getUsername()); return toAjax(service.saveRoom(e)); }
