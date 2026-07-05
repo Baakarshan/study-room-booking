@@ -30,5 +30,11 @@
             <groupId>com.ruoyi</groupId>
             <artifactId>ruoyi-quartz</artifactId>
         </dependency>
+
+        <!-- spring-doc -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.seatflow.mapper.SeatFlowReportMapper">
+
+    <resultMap type="ReportSummaryVo" id="ReportSummaryResult">
+        <result property="reservationCount" column="reservation_count" />
+        <result property="checkinCount" column="checkin_count" />
+        <result property="noShowCount" column="no_show_count" />
+        <result property="activeSeatCount" column="active_seat_count" />
+        <result property="usageMinutes" column="usage_minutes" />
+        <result property="usageRate" column="usage_rate" />
+    </resultMap>
+
+    <resultMap type="SeatHeatmapVo" id="SeatHeatmapResult">
+        <id property="seatId" column="seat_id" />
+        <result property="roomId" column="room_id" />
+        <result property="roomName" column="room_name" />
+        <result property="seatNo" column="seat_no" />
+        <result property="rowNum" column="row_num" />
+        <result property="colNum" column="col_num" />
+        <result property="reservationCount" column="reservation_count" />
+        <result property="usageMinutes" column="usage_minutes" />
+    </resultMap>
+
+    <resultMap type="UsageRateVo" id="UsageRateResult">
+        <result property="reportDate" column="report_date" />
+        <result property="roomId" column="room_id" />
+        <result property="roomName" column="room_name" />
+        <result property="usageMinutes" column="usage_minutes" />
+        <result property="availableMinutes" column="available_minutes" />
+        <result property="usageRate" column="usage_rate" />
+    </resultMap>
+
+    <resultMap type="PopularSlotVo" id="PopularSlotResult">
+        <result property="slotLabel" column="slot_label" />
+        <result property="reservationCount" column="reservation_count" />
+        <result property="checkinCount" column="checkin_count" />
+    </resultMap>
+
+    <resultMap type="RoomRankingVo" id="RoomRankingResult">
+        <id property="roomId" column="room_id" />
+        <result property="roomName" column="room_name" />
+        <result property="reservationCount" column="reservation_count" />
+        <result property="checkinCount" column="checkin_count" />
+        <result property="usageMinutes" column="usage_minutes" />
+        <result property="usageRate" column="usage_rate" />
+    </resultMap>
+
+    <sql id="roomScopeSelect">
+        select rm.room_id, rm.room_name, rm.open_time, rm.close_time
+        from seatflow_room rm
+        inner join seatflow_floor fl on fl.floor_id = rm.floor_id
+        inner join seatflow_building bd on bd.building_id = fl.building_id
+        inner join seatflow_campus cp on cp.campus_id = bd.campus_id
+        where 1 = 1
+        <if test="campusId != null">
+            and cp.campus_id = #{campusId}
+        </if>
+        <if test="buildingId != null">
+            and bd.building_id = #{buildingId}
+        </if>
+        <if test="floorId != null">
+            and fl.floor_id = #{floorId}
+        </if>
+        <if test="roomId != null">
+            and rm.room_id = #{roomId}
+        </if>
+    </sql>
+
+    <sql id="validReservationOverlap">
+        r.start_time &lt; #{endTime}
+        and r.end_time &gt; #{beginTime}
+        and r.status in ('pending_checkin', 'in_use', 'completed')
+    </sql>
+
+    <sql id="usageReservationOverlap">
+        r.start_time &lt; #{endTime}
+        and r.end_time &gt; #{beginTime}
+        and r.status in ('in_use', 'completed')
+    </sql>
+
+    <select id="selectSummary" parameterType="ReportQuery" resultMap="ReportSummaryResult">
+        with room_scope as (
+            <include refid="roomScopeSelect" />
+        ),
+        active_seat_stats as (
+            select count(s.seat_id) as active_seat_count,
+                   coalesce(sum(floor(time_to_sec(timediff(rs.close_time, rs.open_time)) / 60))
+                       * (timestampdiff(day, date(#{beginTime}), date(#{endTime})) + 1), 0) as available_minutes
+            from room_scope rs
+            inner join seatflow_seat s on s.room_id = rs.room_id and s.status = 'enabled'
+        ),
+        reservation_stats as (
+            select count(r.reservation_id) as reservation_count
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="validReservationOverlap" />
+        ),
+        no_show_stats as (
+            select count(r.reservation_id) as no_show_count
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where r.start_time &lt; #{endTime}
+              and r.end_time &gt; #{beginTime}
+              and r.status = 'no_show'
+        ),
+        checkin_stats as (
+            select count(distinct c.checkin_id) as checkin_count
+            from seatflow_checkin_record c
+            inner join seatflow_reservation r on r.reservation_id = c.reservation_id
+            inner join room_scope rs on rs.room_id = r.room_id
+            where c.status = 'active'
+              and r.start_time &lt; #{endTime}
+              and r.end_time &gt; #{beginTime}
+        ),
+        usage_stats as (
+            select coalesce(sum(greatest(0, timestampdiff(minute,
+                       greatest(r.start_time, #{beginTime}),
+                       least(r.end_time, #{endTime})
+                   ))), 0) as usage_minutes
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="usageReservationOverlap" />
+        )
+        select coalesce(rs.reservation_count, 0) as reservation_count,
+               coalesce(cs.checkin_count, 0) as checkin_count,
+               coalesce(ns.no_show_count, 0) as no_show_count,
+               coalesce(ass.active_seat_count, 0) as active_seat_count,
+               coalesce(us.usage_minutes, 0) as usage_minutes,
+               case when coalesce(ass.available_minutes, 0) = 0 then 0
+                    else round(coalesce(us.usage_minutes, 0) / ass.available_minutes, 4)
+               end as usage_rate
+        from reservation_stats rs
+        cross join checkin_stats cs
+        cross join no_show_stats ns
+        cross join active_seat_stats ass
+        cross join usage_stats us
+    </select>
+
+    <select id="selectHeatmap" parameterType="ReportQuery" resultMap="SeatHeatmapResult">
+        with room_scope as (
+            <include refid="roomScopeSelect" />
+        )
+        select s.seat_id,
+               s.room_id,
+               rs.room_name,
+               s.seat_no,
+               s.row_num,
+               s.col_num,
+               coalesce(count(distinct case when r.status in ('pending_checkin', 'in_use', 'completed') then r.reservation_id end), 0) as reservation_count,
+               coalesce(sum(case when r.status in ('in_use', 'completed') then
+                   greatest(0, timestampdiff(minute, greatest(r.start_time, #{beginTime}), least(r.end_time, #{endTime})))
+               else 0 end), 0) as usage_minutes
+        from seatflow_seat s
+        inner join room_scope rs on rs.room_id = s.room_id
+        left join seatflow_reservation r on r.seat_id = s.seat_id
+             and r.start_time &lt; #{endTime}
+             and r.end_time &gt; #{beginTime}
+             and r.status in ('pending_checkin', 'in_use', 'completed')
+        where s.status = 'enabled'
+        group by s.seat_id, s.room_id, rs.room_name, s.seat_no, s.row_num, s.col_num
+        <choose>
+            <when test="metric == 'usage_minutes'">
+                order by usage_minutes desc, s.room_id asc, s.row_num asc, s.col_num asc
+            </when>
+            <otherwise>
+                order by reservation_count desc, s.room_id asc, s.row_num asc, s.col_num asc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectUsageRate" parameterType="ReportQuery" resultMap="UsageRateResult">
+        with room_scope as (
+            <include refid="roomScopeSelect" />
+        ),
+        room_available as (
+            select rs.room_id,
+                   rs.room_name,
+                   count(s.seat_id) * floor(time_to_sec(timediff(rs.close_time, rs.open_time)) / 60) as available_minutes
+            from room_scope rs
+            inner join seatflow_seat s on s.room_id = rs.room_id and s.status = 'enabled'
+            group by rs.room_id, rs.room_name, rs.open_time, rs.close_time
+        ),
+        room_usage as (
+            select date_format(date(r.start_time), '%Y-%m-%d') as report_date,
+                   r.room_id,
+                   coalesce(sum(greatest(0, timestampdiff(minute,
+                       greatest(r.start_time, #{beginTime}),
+                       least(r.end_time, #{endTime})
+                   ))), 0) as usage_minutes
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="usageReservationOverlap" />
+            group by date(r.start_time), r.room_id
+        )
+        select ru.report_date,
+               ra.room_id,
+               ra.room_name,
+               coalesce(ru.usage_minutes, 0) as usage_minutes,
+               coalesce(ra.available_minutes, 0) as available_minutes,
+               case when coalesce(ra.available_minutes, 0) = 0 then 0
+                    else round(coalesce(ru.usage_minutes, 0) / ra.available_minutes, 4)
+               end as usage_rate
+        from room_usage ru
+        inner join room_available ra on ra.room_id = ru.room_id
+        order by ru.report_date asc, ra.room_id asc
+    </select>
+
+    <select id="selectPopularSlots" parameterType="ReportQuery" resultMap="PopularSlotResult">
+        with room_scope as (
+            <include refid="roomScopeSelect" />
+        ),
+        reservation_slots as (
+            select date_format(r.start_time, '%H:00') as slot_label,
+                   count(r.reservation_id) as reservation_count
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="validReservationOverlap" />
+            group by date_format(r.start_time, '%H:00')
+        ),
+        checkin_slots as (
+            select date_format(r.start_time, '%H:00') as slot_label,
+                   count(distinct c.checkin_id) as checkin_count
+            from seatflow_checkin_record c
+            inner join seatflow_reservation r on r.reservation_id = c.reservation_id
+            inner join room_scope rs on rs.room_id = r.room_id
+            where c.status = 'active'
+              and r.start_time &lt; #{endTime}
+              and r.end_time &gt; #{beginTime}
+            group by date_format(r.start_time, '%H:00')
+        )
+        select rs.slot_label,
+               coalesce(rs.reservation_count, 0) as reservation_count,
+               coalesce(cs.checkin_count, 0) as checkin_count
+        from reservation_slots rs
+        left join checkin_slots cs on cs.slot_label = rs.slot_label
+        order by reservation_count desc, rs.slot_label asc
+    </select>
+
+    <select id="selectRoomRanking" parameterType="ReportQuery" resultMap="RoomRankingResult">
+        with room_scope as (
+            <include refid="roomScopeSelect" />
+        ),
+        room_available as (
+            select rs.room_id,
+                   rs.room_name,
+                   count(s.seat_id) * floor(time_to_sec(timediff(rs.close_time, rs.open_time)) / 60)
+                       * (timestampdiff(day, date(#{beginTime}), date(#{endTime})) + 1) as available_minutes
+            from room_scope rs
+            inner join seatflow_seat s on s.room_id = rs.room_id and s.status = 'enabled'
+            group by rs.room_id, rs.room_name, rs.open_time, rs.close_time
+        ),
+        reservation_stats as (
+            select r.room_id,
+                   count(r.reservation_id) as reservation_count
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="validReservationOverlap" />
+            group by r.room_id
+        ),
+        checkin_stats as (
+            select r.room_id,
+                   count(distinct c.checkin_id) as checkin_count
+            from seatflow_checkin_record c
+            inner join seatflow_reservation r on r.reservation_id = c.reservation_id
+            inner join room_scope rs on rs.room_id = r.room_id
+            where c.status = 'active'
+              and r.start_time &lt; #{endTime}
+              and r.end_time &gt; #{beginTime}
+            group by r.room_id
+        ),
+        usage_stats as (
+            select r.room_id,
+                   coalesce(sum(greatest(0, timestampdiff(minute,
+                       greatest(r.start_time, #{beginTime}),
+                       least(r.end_time, #{endTime})
+                   ))), 0) as usage_minutes
+            from seatflow_reservation r
+            inner join room_scope rs on rs.room_id = r.room_id
+            where <include refid="usageReservationOverlap" />
+            group by r.room_id
+        )
+        select ra.room_id,
+               ra.room_name,
+               coalesce(rs.reservation_count, 0) as reservation_count,
+               coalesce(cs.checkin_count, 0) as checkin_count,
+               coalesce(us.usage_minutes, 0) as usage_minutes,
+               case when coalesce(ra.available_minutes, 0) = 0 then 0
+                    else round(coalesce(us.usage_minutes, 0) / ra.available_minutes, 4)
+               end as usage_rate
+        from room_available ra
+        left join reservation_stats rs on rs.room_id = ra.room_id
+        left join checkin_stats cs on cs.room_id = ra.room_id
+        left join usage_stats us on us.room_id = ra.room_id
+        <choose>
+            <when test="metric == 'checkin_count'">
+                order by checkin_count desc, ra.room_id asc
+            </when>
+            <when test="metric == 'usage_rate'">
+                order by usage_rate desc, ra.room_id asc
+            </when>
+            <otherwise>
+                order by reservation_count desc, ra.room_id asc
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>
