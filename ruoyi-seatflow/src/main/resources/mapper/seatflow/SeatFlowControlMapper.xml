@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.seatflow.mapper.SeatFlowControlMapper">
+
+    <resultMap id="ControlReservationMap" type="com.ruoyi.seatflow.domain.ControlReservation">
+        <id property="reservationId" column="reservation_id" />
+        <result property="userId" column="user_id" />
+        <result property="roomId" column="room_id" />
+        <result property="seatId" column="seat_id" />
+        <result property="roomName" column="room_name" />
+        <result property="seatNo" column="seat_no" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="checkDeadline" column="check_deadline" />
+        <result property="status" column="status" />
+    </resultMap>
+
+    <select id="selectReservationForUpdate" resultMap="ControlReservationMap">
+        select reservation_id, user_id, room_id, seat_id, start_time, end_time, check_deadline, status
+        from seatflow_reservation
+        where reservation_id = #{reservationId}
+        for update
+    </select>
+
+    <select id="selectAvailableCheckins" resultMap="ControlReservationMap">
+        select r.reservation_id, r.user_id, r.room_id, r.seat_id, rm.room_name, s.seat_no,
+               r.start_time, r.end_time, r.check_deadline, r.status
+        from seatflow_reservation r
+        inner join seatflow_room rm on rm.room_id = r.room_id
+        inner join seatflow_seat s on s.seat_id = r.seat_id
+        where r.user_id = #{userId}
+          and r.status = 'pending_checkin'
+          and r.start_time &lt;= #{now}
+          and r.check_deadline &gt;= #{now}
+        order by r.start_time asc
+    </select>
+
+    <update id="markCheckedIn">
+        update seatflow_reservation
+        set status = 'in_use', update_time = #{now}
+        where reservation_id = #{reservationId}
+          and status = 'pending_checkin'
+    </update>
+
+    <insert id="insertCheckin">
+        insert into seatflow_checkin_record
+            (reservation_id, user_id, checkin_time, status, create_time)
+        values
+            (#{reservationId}, #{userId}, #{now}, 'active', #{now})
+    </insert>
+
+    <select id="selectExpiredForUpdate" resultMap="ControlReservationMap">
+        select reservation_id, user_id, room_id, seat_id, start_time, end_time, check_deadline, status
+        from seatflow_reservation
+        where status = 'pending_checkin'
+          and check_deadline &lt; #{now}
+        order by check_deadline asc, reservation_id asc
+        limit #{limit}
+        for update skip locked
+    </select>
+
+    <update id="markNoShow">
+        update seatflow_reservation
+        set status = 'no_show', update_time = #{now}
+        where reservation_id = #{reservationId}
+          and status = 'pending_checkin'
+          and check_deadline &lt; #{now}
+    </update>
+
+    <insert id="insertViolation">
+        insert into seatflow_violation_record
+            (reservation_id, user_id, reason, violation_time, status, create_time)
+        values
+            (#{reservationId}, #{userId}, #{reason}, #{now}, 'active', #{now})
+    </insert>
+
+    <select id="selectViolationIdByReservation" resultType="java.lang.Long">
+        select violation_id
+        from seatflow_violation_record
+        where reservation_id = #{reservationId}
+    </select>
+
+    <update id="incrementViolationCount">
+        update seatflow_user_profile
+        set violation_count = violation_count + 1, update_time = current_timestamp
+        where user_id = #{userId}
+    </update>
+
+    <select id="selectViolationCountForUpdate" resultType="java.lang.Integer">
+        select violation_count
+        from seatflow_user_profile
+        where user_id = #{userId}
+        for update
+    </select>
+
+    <update id="markProfileBlacklisted">
+        update seatflow_user_profile
+        set blacklist_flag = 'yes', update_time = current_timestamp
+        where user_id = #{userId}
+          and blacklist_flag &lt;&gt; 'yes'
+    </update>
+
+    <insert id="insertBlacklist">
+        insert into seatflow_blacklist
+            (user_id, violation_id, reason, start_time, end_time, status, create_time)
+        values
+            (#{userId}, #{violationId}, #{reason}, #{now}, null, 'active', #{now})
+        on duplicate key update
+            violation_id = values(violation_id),
+            reason = values(reason),
+            start_time = least(start_time, values(start_time)),
+            end_time = null,
+            status = 'active',
+            update_time = values(start_time)
+    </insert>
+
+    <select id="selectViolations" resultType="com.ruoyi.seatflow.domain.ViolationRecord">
+        select v.violation_id, v.reservation_id, v.user_id, u.user_name, p.student_no,
+               v.reason, v.violation_time, v.status
+        from seatflow_violation_record v
+        inner join sys_user u on u.user_id = v.user_id
+        left join seatflow_user_profile p on p.user_id = v.user_id
+        <where>
+            <if test="userId != null">and v.user_id = #{userId}</if>
+            <if test="query != null and query.userName != null and query.userName != ''">
+                and u.user_name like concat('%', #{query.userName}, '%')
+            </if>
+            <if test="query != null and query.studentNo != null and query.studentNo != ''">
+                and p.student_no like concat('%', #{query.studentNo}, '%')
+            </if>
+        </where>
+        order by v.violation_time desc, v.violation_id desc
+    </select>
+
+    <select id="selectBlacklist" resultType="com.ruoyi.seatflow.domain.BlacklistEntry">
+        select b.blacklist_id, b.user_id, u.user_name, u.nick_name, p.student_no,
+               p.violation_count, b.reason, b.start_time, b.end_time, b.status
+        from seatflow_blacklist b
+        inner join sys_user u on u.user_id = b.user_id
+        inner join seatflow_user_profile p on p.user_id = b.user_id
+        where b.status = 'active'
+        <if test="userName != null and userName != ''">
+            and u.user_name like concat('%', #{userName}, '%')
+        </if>
+        <if test="studentNo != null and studentNo != ''">
+            and p.student_no like concat('%', #{studentNo}, '%')
+        </if>
+        order by b.start_time desc, b.blacklist_id desc
+    </select>
+</mapper>
