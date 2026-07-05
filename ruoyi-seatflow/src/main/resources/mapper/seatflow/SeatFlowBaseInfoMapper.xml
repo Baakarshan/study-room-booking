@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.seatflow.mapper.SeatFlowBaseInfoMapper">
+    <resultMap id="campus" type="com.ruoyi.seatflow.domain.base.SeatFlowCampus">
+        <id property="campusId" column="campus_id"/><result property="campusName" column="campus_name"/><result property="address" column="address"/><result property="status" column="status"/>
+        <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/><result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="building" type="com.ruoyi.seatflow.domain.base.SeatFlowBuilding">
+        <id property="buildingId" column="building_id"/><result property="campusId" column="campus_id"/><result property="campusName" column="campus_name"/><result property="buildingName" column="building_name"/><result property="floorCount" column="floor_count"/><result property="status" column="status"/>
+        <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/><result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="floor" type="com.ruoyi.seatflow.domain.base.SeatFlowFloor">
+        <id property="floorId" column="floor_id"/><result property="buildingId" column="building_id"/><result property="buildingName" column="building_name"/><result property="floorNumber" column="floor_number"/><result property="floorName" column="floor_name"/><result property="status" column="status"/>
+        <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/><result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="room" type="com.ruoyi.seatflow.domain.base.SeatFlowRoom">
+        <id property="roomId" column="room_id"/><result property="floorId" column="floor_id"/><result property="floorName" column="floor_name"/><result property="roomName" column="room_name"/><result property="rowCount" column="row_count"/><result property="colCount" column="col_count"/><result property="totalSeats" column="total_seats"/><result property="openTime" column="open_time"/><result property="closeTime" column="close_time"/><result property="status" column="status"/>
+        <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/><result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="seat" type="com.ruoyi.seatflow.domain.base.SeatFlowSeat">
+        <id property="seatId" column="seat_id"/><result property="roomId" column="room_id"/><result property="roomName" column="room_name"/><result property="seatNo" column="seat_no"/><result property="rowNum" column="row_num"/><result property="colNum" column="col_num"/><result property="status" column="status"/>
+        <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/><result property="remark" column="remark"/>
+    </resultMap>
+
+    <select id="selectCampusList" resultMap="campus">select * from seatflow_campus <where><if test="campusName != null and campusName != ''">and campus_name like concat('%',#{campusName},'%')</if><if test="status != null and status != ''">and status=#{status}</if></where> order by campus_id desc</select>
+    <select id="selectCampusById" resultMap="campus">select * from seatflow_campus where campus_id=#{id}</select>
+    <insert id="insertCampus" useGeneratedKeys="true" keyProperty="campusId">insert into seatflow_campus(campus_name,address,status,create_by,create_time,remark) values(#{campusName},#{address},#{status},#{createBy},sysdate(),#{remark})</insert>
+    <update id="updateCampus">update seatflow_campus set campus_name=#{campusName},address=#{address},status=#{status},update_by=#{updateBy},update_time=sysdate(),remark=#{remark} where campus_id=#{campusId}</update>
+    <delete id="deleteCampusById">delete from seatflow_campus where campus_id=#{id}</delete>
+    <select id="countBuildingByCampusId" resultType="int">select count(1) from seatflow_building where campus_id=#{id}</select>
+
+    <select id="selectBuildingList" resultMap="building">select b.*,c.campus_name from seatflow_building b left join seatflow_campus c on c.campus_id=b.campus_id <where><if test="campusId != null">and b.campus_id=#{campusId}</if><if test="buildingName != null and buildingName != ''">and b.building_name like concat('%',#{buildingName},'%')</if><if test="status != null and status != ''">and b.status=#{status}</if></where> order by b.building_id desc</select>
+    <select id="selectBuildingById" resultMap="building">select b.*,c.campus_name from seatflow_building b left join seatflow_campus c on c.campus_id=b.campus_id where b.building_id=#{id}</select>
+    <insert id="insertBuilding" useGeneratedKeys="true" keyProperty="buildingId">insert into seatflow_building(campus_id,building_name,floor_count,status,create_by,create_time,remark) values(#{campusId},#{buildingName},#{floorCount},#{status},#{createBy},sysdate(),#{remark})</insert>
+    <update id="updateBuilding">update seatflow_building set campus_id=#{campusId},building_name=#{buildingName},floor_count=#{floorCount},status=#{status},update_by=#{updateBy},update_time=sysdate(),remark=#{remark} where building_id=#{buildingId}</update>
+    <delete id="deleteBuildingById">delete from seatflow_building where building_id=#{id}</delete>
+    <select id="countFloorByBuildingId" resultType="int">select count(1) from seatflow_floor where building_id=#{id}</select>
+
+    <select id="selectFloorList" resultMap="floor">select f.*,b.building_name from seatflow_floor f left join seatflow_building b on b.building_id=f.building_id <where><if test="buildingId != null">and f.building_id=#{buildingId}</if><if test="floorName != null and floorName != ''">and f.floor_name like concat('%',#{floorName},'%')</if><if test="status != null and status != ''">and f.status=#{status}</if></where> order by f.building_id,f.floor_number</select>
+    <select id="selectFloorById" resultMap="floor">select f.*,b.building_name from seatflow_floor f left join seatflow_building b on b.building_id=f.building_id where f.floor_id=#{id}</select>
+    <insert id="insertFloor" useGeneratedKeys="true" keyProperty="floorId">insert into seatflow_floor(building_id,floor_number,floor_name,status,create_by,create_time,remark) values(#{buildingId},#{floorNumber},#{floorName},#{status},#{createBy},sysdate(),#{remark})</insert>
+    <update id="updateFloor">update seatflow_floor set building_id=#{buildingId},floor_number=#{floorNumber},floor_name=#{floorName},status=#{status},update_by=#{updateBy},update_time=sysdate(),remark=#{remark} where floor_id=#{floorId}</update>
+    <delete id="deleteFloorById">delete from seatflow_floor where floor_id=#{id}</delete>
+    <select id="countRoomByFloorId" resultType="int">select count(1) from seatflow_room where floor_id=#{id}</select>
+
+    <select id="selectRoomList" resultMap="room">select r.*,f.floor_name from seatflow_room r left join seatflow_floor f on f.floor_id=r.floor_id <where><if test="floorId != null">and r.floor_id=#{floorId}</if><if test="roomName != null and roomName != ''">and r.room_name like concat('%',#{roomName},'%')</if><if test="status != null and status != ''">and r.status=#{status}</if></where> order by r.room_id desc</select>
+    <select id="selectRoomById" resultMap="room">select r.*,f.floor_name from seatflow_room r left join seatflow_floor f on f.floor_id=r.floor_id where r.room_id=#{id}</select>
+    <insert id="insertRoom" useGeneratedKeys="true" keyProperty="roomId">insert into seatflow_room(floor_id,room_name,row_count,col_count,total_seats,open_time,close_time,status,create_by,create_time,remark) values(#{floorId},#{roomName},#{rowCount},#{colCount},#{totalSeats},#{openTime},#{closeTime},#{status},#{createBy},sysdate(),#{remark})</insert>
+    <update id="updateRoom">update seatflow_room set floor_id=#{floorId},room_name=#{roomName},row_count=#{rowCount},col_count=#{colCount},total_seats=#{totalSeats},open_time=#{openTime},close_time=#{closeTime},status=#{status},update_by=#{updateBy},update_time=sysdate(),remark=#{remark} where room_id=#{roomId}</update>
+    <delete id="deleteRoomById">delete from seatflow_room where room_id=#{id}</delete>
+    <select id="countSeatByRoomId" resultType="int">select count(1) from seatflow_seat where room_id=#{id}</select>
+
+    <select id="selectSeatList" resultMap="seat">select s.*,r.room_name from seatflow_seat s left join seatflow_room r on r.room_id=s.room_id <where><if test="roomId != null">and s.room_id=#{roomId}</if><if test="seatNo != null and seatNo != ''">and s.seat_no like concat('%',#{seatNo},'%')</if><if test="status != null and status != ''">and s.status=#{status}</if></where> order by s.row_num,s.col_num</select>
+    <select id="selectSeatById" resultMap="seat">select s.*,r.room_name from seatflow_seat s left join seatflow_room r on r.room_id=s.room_id where s.seat_id=#{id}</select>
+    <insert id="insertSeatBatch">insert into seatflow_seat(room_id,seat_no,row_num,col_num,status,create_by,create_time) values <foreach collection="seats" item="s" separator=",">(#{s.roomId},#{s.seatNo},#{s.rowNum},#{s.colNum},#{s.status},#{s.createBy},sysdate())</foreach></insert>
+    <update id="updateSeatStatus">update seatflow_seat set status=#{status},update_by=#{updateBy},update_time=sysdate() where seat_id=#{seatId}</update>
+</mapper>
