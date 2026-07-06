@@ -193,7 +193,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             from seatflow_reservation r
             inner join room_scope rs on rs.room_id = r.room_id
             where <include refid="usageReservationOverlap" />
-            group by date(r.start_time), r.room_id
+            group by date_format(date(r.start_time), '%Y-%m-%d'), r.room_id
         )
         select ru.report_date,
                ra.room_id,

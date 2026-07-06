@@ -46,6 +46,7 @@ nbdist/
 *.xml.versionsBackup
 *.swp
 .DS_Store
+docs/write-rule/
 
 !*/build/*.java
 !*/build/*.html
