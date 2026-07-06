@@ -13,9 +13,10 @@
             :disabled-date="disableFutureDate"
           />
         </el-form-item>
-        <el-form-item label="自习室ID">
-          <el-input-number v-model="filters.roomId" :min="1" :controls="false" placeholder="全部" clearable />
-        </el-form-item>
+        <el-form-item label="校区"><el-select v-model="filters.campusId" clearable placeholder="全部校区" style="width: 150px" @change="campusChanged"><el-option v-for="item in campuses" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
+        <el-form-item label="楼栋"><el-select v-model="filters.buildingId" clearable placeholder="全部楼栋" style="width: 150px" :disabled="!filters.campusId" @change="buildingChanged"><el-option v-for="item in buildings" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
+        <el-form-item label="楼层"><el-select v-model="filters.floorId" clearable placeholder="全部楼层" style="width: 140px" :disabled="!filters.buildingId" @change="floorChanged"><el-option v-for="item in floors" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
+        <el-form-item label="自习室"><el-select v-model="filters.roomId" clearable placeholder="全部自习室" style="width: 180px" :disabled="!filters.floorId"><el-option v-for="item in rooms" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="loadReport">查询</el-button>
           <el-button @click="resetFilters">重置</el-button>
@@ -93,9 +94,14 @@ import {
   getUsageRate,
   getUsageSummary
 } from '@/api/seatflow/report'
+import { listBuildings, listCampuses, listFloors, listRooms } from '@/api/seatflow/reservation'
 
 const loading = ref(false)
-const filters = reactive({ roomId: undefined })
+const filters = reactive({ campusId: undefined, buildingId: undefined, floorId: undefined, roomId: undefined })
+const campuses = ref([])
+const buildings = ref([])
+const floors = ref([])
+const rooms = ref([])
 const dateRange = ref(defaultDateRange())
 const rankingMetric = ref('reservation_count')
 const heatmapMetric = ref('reservation_count')
@@ -239,11 +245,25 @@ function renderHeatmap(rows) {
 }
 
 function resetFilters() {
-  filters.roomId = undefined
+  Object.assign(filters, { campusId: undefined, buildingId: undefined, floorId: undefined, roomId: undefined })
+  buildings.value = []; floors.value = []; rooms.value = []
   dateRange.value = defaultDateRange()
   rankingMetric.value = 'reservation_count'
   heatmapMetric.value = 'reservation_count'
   loadReport()
+}
+
+async function campusChanged(id) {
+  Object.assign(filters, { buildingId: undefined, floorId: undefined, roomId: undefined })
+  buildings.value = id ? (await listBuildings(id)).data || [] : []; floors.value = []; rooms.value = []
+}
+async function buildingChanged(id) {
+  Object.assign(filters, { floorId: undefined, roomId: undefined })
+  floors.value = id ? (await listFloors(id)).data || [] : []; rooms.value = []
+}
+async function floorChanged(id) {
+  filters.roomId = undefined
+  rooms.value = id ? (await listRooms(id)).data || [] : []
 }
 
 function disableFutureDate(date) {
@@ -256,6 +276,7 @@ function resizeCharts() {
 
 onMounted(() => {
   window.addEventListener('resize', resizeCharts)
+  listCampuses().then(res => { campuses.value = res.data || [] })
   loadReport()
 })
 
@@ -275,4 +296,8 @@ onBeforeUnmount(() => {
 .card-header { display: flex; align-items: center; justify-content: space-between; }
 .hint { color: var(--el-text-color-secondary); font-size: 12px; }
 .chart { width: 100%; height: 340px; }
+@media (max-width: 768px) {
+  .filter-card :deep(.el-form-item), .filter-card :deep(.el-select), .filter-card :deep(.el-date-editor) { width: 100% !important; }
+  .chart { height: 290px; }
+}
 </style>

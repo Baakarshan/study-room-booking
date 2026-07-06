@@ -23,3 +23,15 @@ export function listViolations(query) {
 export function listBlacklist(query) {
   return request({ url: '/seatflow/control/blacklist', method: 'get', params: query })
 }
+
+export function completeReservation(data) {
+  return request({ url: '/seatflow/control/complete', method: 'post', data })
+}
+
+export function getControlProfile() {
+  return request({ url: '/seatflow/control/profile', method: 'get' })
+}
+
+export function releaseBlacklist(id) {
+  return request({ url: `/seatflow/control/blacklist/${id}/release`, method: 'put' })
+}
