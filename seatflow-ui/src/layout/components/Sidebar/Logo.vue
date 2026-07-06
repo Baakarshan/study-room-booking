@@ -64,8 +64,8 @@ const getLogoTextColor = computed(() => {
 
 .sidebar-logo-container {
   position: relative;
-  height: 50px;
-  line-height: 50px;
+  height: 56px;
+  line-height: 56px;
   background: v-bind(getLogoBackground);
   text-align: center;
   overflow: hidden;
@@ -86,9 +86,9 @@ const getLogoTextColor = computed(() => {
       margin: 0;
       color: v-bind(getLogoTextColor);
       font-weight: 600;
-      line-height: 50px;
-      font-size: 14px;
-      font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+      line-height: 56px;
+      font-size: 15px;
+      font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
       vertical-align: middle;
     }
   }

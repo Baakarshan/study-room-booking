@@ -4,9 +4,9 @@ import { getRouters } from '@/api/menu'
 import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
+import { fixMojibake } from '@/utils/text'
 
-// 匹配views里面所有的.vue文件
-const modules = import.meta.glob('./../../views/**/*.vue')
+const modules = import.meta.glob('./../../views/seatflow/**/*.vue')
 
 const usePermissionStore = defineStore(
   'permission',
@@ -32,13 +32,14 @@ const usePermissionStore = defineStore(
       setSidebarRouters(routes) {
         this.sidebarRouters = routes
       },
-      generateRoutes(roles) {
+      generateRoutes() {
         return new Promise(resolve => {
-          // 向后端请求路由数据
           getRouters().then(res => {
-            const sdata = JSON.parse(JSON.stringify(res.data))
-            const rdata = JSON.parse(JSON.stringify(res.data))
-            const defaultData = JSON.parse(JSON.stringify(res.data))
+            const seatflowRoutes = filterSeatFlowRoutes(res.data)
+            normalizeRouteText(seatflowRoutes)
+            const sdata = JSON.parse(JSON.stringify(seatflowRoutes))
+            const rdata = JSON.parse(JSON.stringify(seatflowRoutes))
+            const defaultData = JSON.parse(JSON.stringify(seatflowRoutes))
             const sidebarRoutes = filterAsyncRouter(sdata)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
             const defaultRoutes = filterAsyncRouter(defaultData)
@@ -55,14 +56,38 @@ const usePermissionStore = defineStore(
     }
   })
 
-// 遍历后台传来的路由字符串，转换为组件对象
+function filterSeatFlowRoutes(routes = []) {
+  return routes
+    .map(route => ({ ...route }))
+    .filter(route => {
+      const routePath = String(route.path || '').replace(/^\/+/, '')
+      const component = String(route.component || '')
+      const isSeatFlow = routePath === 'seatflow' || component.startsWith('seatflow/')
+      if (route.children && route.children.length) {
+        route.children = filterSeatFlowRoutes(route.children)
+      }
+      return isSeatFlow || (route.children && route.children.length)
+    })
+}
+
+function normalizeRouteText(routes = []) {
+  routes.forEach(route => {
+    route.name = fixMojibake(route.name)
+    if (route.meta) {
+      route.meta.title = fixMojibake(route.meta.title)
+    }
+    if (route.children && route.children.length) {
+      normalizeRouteText(route.children)
+    }
+  })
+}
+
 function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
   return asyncRouterMap.filter(route => {
     if (type && route.children) {
       route.children = filterChildren(route.children)
     }
     if (route.component) {
-      // Layout ParentView 组件特殊处理
       if (route.component === 'Layout') {
         route.component = Layout
       } else if (route.component === 'ParentView') {
@@ -76,8 +101,8 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
     if (route.children != null && route.children && route.children.length) {
       route.children = filterAsyncRouter(route.children, route, type)
     } else {
-      delete route['children']
-      delete route['redirect']
+      delete route.children
+      delete route.redirect
     }
     return true
   })
@@ -96,7 +121,6 @@ function filterChildren(childrenMap, lastRouter = false) {
   return children
 }
 
-// 动态路由遍历，验证是否具备权限
 export function filterDynamicRoutes(routes) {
   const res = []
   routes.forEach(route => {
