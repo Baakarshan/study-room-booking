@@ -37,7 +37,8 @@ create table seatflow_campus (
   update_by      varchar(64)   default ''              comment '更新者',
   update_time    datetime                              comment '更新时间',
   remark         varchar(500)  default null            comment '备注',
-  primary key (campus_id)
+  primary key (campus_id),
+  unique key uk_seatflow_campus_name (campus_name)
 ) engine=innodb comment = 'SeatFlow校区表';
 
 drop table if exists seatflow_building;
@@ -53,6 +54,7 @@ create table seatflow_building (
   update_time     datetime                              comment '更新时间',
   remark          varchar(500)  default null            comment '备注',
   primary key (building_id),
+  unique key uk_seatflow_building_name (campus_id, building_name),
   key idx_seatflow_building_campus (campus_id)
 ) engine=innodb comment = 'SeatFlow楼栋表';
 
@@ -69,6 +71,7 @@ create table seatflow_floor (
   update_time   datetime                              comment '更新时间',
   remark        varchar(500)  default null            comment '备注',
   primary key (floor_id),
+  unique key uk_seatflow_floor_number (building_id, floor_number),
   key idx_seatflow_floor_building (building_id)
 ) engine=innodb comment = 'SeatFlow楼层表';
 
@@ -89,6 +92,7 @@ create table seatflow_room (
   update_time   datetime                              comment '更新时间',
   remark        varchar(500)  default null            comment '备注',
   primary key (room_id),
+  unique key uk_seatflow_room_name (floor_id, room_name),
   key idx_seatflow_room_floor (floor_id)
 ) engine=innodb comment = 'SeatFlow自习室表';
 
@@ -124,6 +128,7 @@ create table seatflow_reservation (
   check_deadline  datetime     not null                comment '签到截止时间',
   status          varchar(32)  not null                comment '预约状态',
   cancel_time     datetime                             comment '取消时间',
+  complete_time   datetime                             comment '完成时间',
   create_by       varchar(64)  default ''              comment '创建者',
   create_time     datetime                             comment '创建时间',
   update_by       varchar(64)  default ''              comment '更新者',
@@ -132,7 +137,8 @@ create table seatflow_reservation (
   primary key (reservation_id),
   key idx_seatflow_reservation_seat_time (seat_id, start_time, end_time, status),
   key idx_seatflow_reservation_user_time (user_id, start_time, status),
-  key idx_seatflow_reservation_deadline (status, check_deadline)
+  key idx_seatflow_reservation_deadline (status, check_deadline),
+  key idx_seatflow_reservation_completion (status, end_time)
 ) engine=innodb comment = 'SeatFlow预约表';
 
 drop table if exists seatflow_checkin_record;
@@ -185,15 +191,15 @@ create table seatflow_blacklist (
   update_time    datetime                             comment '更新时间',
   remark         varchar(500) default null            comment '备注',
   primary key (blacklist_id),
-  unique key uk_seatflow_blacklist_user_status (user_id, status)
+  unique key uk_seatflow_blacklist_user (user_id)
 ) engine=innodb comment = 'SeatFlow黑名单表';
 
 -- ----------------------------
 -- 4、角色、用户、菜单
 -- ----------------------------
-delete from sys_role_menu where role_id = 3 or menu_id between 2000 and 2006;
+delete from sys_role_menu where role_id = 3 or menu_id between 2000 and 2008;
 delete from sys_user_role where user_id in (10, 11) or role_id = 3;
-delete from sys_menu where menu_id between 2000 and 2006;
+delete from sys_menu where menu_id between 2000 and 2008;
 delete from sys_user where user_id in (10, 11);
 delete from sys_role where role_id = 3;
 
@@ -211,8 +217,10 @@ insert into sys_menu values('2001', '基础信息', '2000', '1', 'base-info', 's
 insert into sys_menu values('2002', '座位预约', '2000', '2', 'reservation', 'seatflow/reservation/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:reservation:create', 'date', 'admin', sysdate(), '', null, '座位预约菜单');
 insert into sys_menu values('2003', '我的预约', '2000', '3', 'my-reservation', 'seatflow/my-reservation/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:reservation:mine', 'list', 'admin', sysdate(), '', null, '我的预约菜单');
 insert into sys_menu values('2004', '签到管控', '2000', '4', 'control', 'seatflow/control/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:control:checkin', 'validCode', 'admin', sysdate(), '', null, '签到管控菜单');
-insert into sys_menu values('2005', '黑名单管理', '2000', '5', 'blacklist', 'seatflow/blacklist/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:control:blacklist:list', 'peoples', 'admin', sysdate(), '', null, '黑名单管理菜单');
-insert into sys_menu values('2006', '统计报表', '2000', '6', 'report', 'seatflow/report/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:report:view', 'chart', 'admin', sysdate(), '', null, '统计报表菜单');
+insert into sys_menu values('2005', '黑名单管理', '2000', '6', 'blacklist', 'seatflow/blacklist/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:control:blacklist:list', 'peoples', 'admin', sysdate(), '', null, '黑名单管理菜单');
+insert into sys_menu values('2006', '统计报表', '2000', '7', 'report', 'seatflow/report/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:report:view', 'chart', 'admin', sysdate(), '', null, '统计报表菜单');
+insert into sys_menu values('2007', '预约管理', '2000', '5', 'reservation-manage', 'seatflow/reservation-manage/index', '', '', 1, 0, 'C', '0', '0', 'seatflow:reservation:list', 'list', 'admin', sysdate(), '', null, '管理员预约总览');
+insert into sys_menu values('2008', '解除黑名单', '2005', '1', '#', '', '', '', 1, 0, 'F', '0', '0', 'seatflow:control:blacklist:edit', '#', 'admin', sysdate(), '', null, '解除学生黑名单');
 
 insert into sys_role_menu values ('3', '2000');
 insert into sys_role_menu values ('3', '2002');
@@ -265,3 +273,36 @@ from (
   select 5, 'E'
 ) r
 cross join (select 1 col_num union all select 2 union all select 3 union all select 4 union all select 5 union all select 6) c;
+
+-- ----------------------------
+-- 7、相对当前时间的报表演示数据
+-- ----------------------------
+insert into seatflow_reservation
+  (reservation_id, user_id, room_id, seat_id, start_time, end_time, check_deadline,
+   status, complete_time, create_by, create_time)
+values
+  (1, 10, 1, 1, date_add(current_date, interval -39 hour),
+   date_add(current_date, interval -38 hour), date_add(date_add(current_date, interval -39 hour), interval 15 minute),
+   'completed', date_add(current_date, interval -38 hour), 'admin', date_add(current_date, interval -40 hour)),
+  (2, 11, 1, 2, date_add(current_date, interval -35 hour),
+   date_add(current_date, interval -34 hour), date_add(date_add(current_date, interval -35 hour), interval 15 minute),
+   'no_show', null, 'admin', date_add(current_date, interval -36 hour)),
+  (3, 10, 2, 21, date_add(current_date, interval -15 hour),
+   date_add(current_date, interval -14 hour), date_add(date_add(current_date, interval -15 hour), interval 15 minute),
+   'completed', date_add(current_date, interval -14 hour), 'admin', date_add(current_date, interval -16 hour));
+
+insert into seatflow_checkin_record
+  (reservation_id, user_id, checkin_time, status, create_by, create_time)
+values
+  (1, 10, date_add(date_add(current_date, interval -39 hour), interval 2 minute), 'active', 'admin', date_add(date_add(current_date, interval -39 hour), interval 2 minute)),
+  (3, 10, date_add(date_add(current_date, interval -15 hour), interval 1 minute), 'active', 'admin', date_add(date_add(current_date, interval -15 hour), interval 1 minute));
+
+insert into seatflow_violation_record
+  (reservation_id, user_id, reason, violation_time, status, create_by, create_time)
+values
+  (2, 11, '预约开始后15分钟内未签到', date_add(date_add(current_date, interval -35 hour), interval 15 minute),
+   'active', 'admin', date_add(date_add(current_date, interval -35 hour), interval 15 minute));
+
+update seatflow_user_profile
+set violation_count = 1, update_time = sysdate()
+where user_id = 11;
