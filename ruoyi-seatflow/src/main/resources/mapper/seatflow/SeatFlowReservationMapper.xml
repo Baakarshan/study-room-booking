@@ -25,6 +25,29 @@
         <result property="checkDeadline" column="check_deadline"/><result property="status" column="status"/>
         <result property="cancelTime" column="cancel_time"/><result property="createTime" column="create_time"/>
     </resultMap>
+    <resultMap id="ReservationManageResult" type="ReservationManageVo">
+        <id property="reservationId" column="reservation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="studentNo" column="student_no"/>
+        <result property="campusId" column="campus_id"/>
+        <result property="campusName" column="campus_name"/>
+        <result property="buildingId" column="building_id"/>
+        <result property="buildingName" column="building_name"/>
+        <result property="floorId" column="floor_id"/>
+        <result property="floorName" column="floor_name"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomName" column="room_name"/>
+        <result property="seatId" column="seat_id"/>
+        <result property="seatNo" column="seat_no"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="checkDeadline" column="check_deadline"/>
+        <result property="status" column="status"/>
+        <result property="cancelTime" column="cancel_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
 
     <select id="selectCampuses" resultMap="SpaceResult">
         select campus_id id, null parent_id, campus_name name, null open_time, null close_time
@@ -96,6 +119,37 @@
           inner join seatflow_campus cp on cp.campus_id = bd.campus_id
         where r.user_id = #{userId}
         <if test="status != null and status != ''">and r.status = #{status}</if>
+        order by r.start_time desc, r.reservation_id desc
+    </select>
+    <select id="selectManagedReservations" parameterType="ReservationManageQuery"
+            resultMap="ReservationManageResult">
+        select r.reservation_id, r.user_id, u.user_name, u.nick_name, p.student_no,
+          cp.campus_id, cp.campus_name, bd.building_id, bd.building_name,
+          fl.floor_id, fl.floor_name, r.room_id, rm.room_name, r.seat_id, s.seat_no,
+          r.start_time, r.end_time, r.check_deadline, r.status, r.cancel_time, r.create_time
+        from seatflow_reservation r
+          inner join sys_user u on u.user_id = r.user_id
+          left join seatflow_user_profile p on p.user_id = r.user_id
+          inner join seatflow_seat s on s.seat_id = r.seat_id
+          inner join seatflow_room rm on rm.room_id = r.room_id
+          inner join seatflow_floor fl on fl.floor_id = rm.floor_id
+          inner join seatflow_building bd on bd.building_id = fl.building_id
+          inner join seatflow_campus cp on cp.campus_id = bd.campus_id
+        <where>
+            <if test="userName != null and userName != ''">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="studentNo != null and studentNo != ''">
+                and p.student_no like concat('%', #{studentNo}, '%')
+            </if>
+            <if test="campusId != null">and cp.campus_id = #{campusId}</if>
+            <if test="buildingId != null">and bd.building_id = #{buildingId}</if>
+            <if test="floorId != null">and fl.floor_id = #{floorId}</if>
+            <if test="roomId != null">and r.room_id = #{roomId}</if>
+            <if test="status != null and status != ''">and r.status = #{status}</if>
+            <if test="beginTime != null">and r.start_time &gt;= #{beginTime}</if>
+            <if test="endTime != null">and r.end_time &lt;= #{endTime}</if>
+        </where>
         order by r.start_time desc, r.reservation_id desc
     </select>
     <select id="selectOwnedReservationForUpdate" resultMap="ReservationResult">

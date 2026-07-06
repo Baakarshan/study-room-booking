@@ -5,9 +5,11 @@ import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.seatflow.domain.dto.MyReservationQuery;
 import com.ruoyi.seatflow.domain.dto.ReservationCreateRequest;
+import com.ruoyi.seatflow.domain.dto.ReservationManageQuery;
 import com.ruoyi.seatflow.domain.dto.SeatAvailabilityQuery;
 import com.ruoyi.seatflow.domain.vo.LockedSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSeatVo;
+import com.ruoyi.seatflow.domain.vo.ReservationManageVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSpaceVo;
 import com.ruoyi.seatflow.domain.vo.ReservationVo;
 
@@ -29,6 +31,7 @@ public interface SeatFlowReservationMapper
     int insertReservation(@Param("userId") Long userId, @Param("request") ReservationCreateRequest request,
             @Param("checkDeadline") Date checkDeadline, @Param("createBy") String createBy);
     List<ReservationVo> selectMyReservations(MyReservationQuery query);
+    List<ReservationManageVo> selectManagedReservations(ReservationManageQuery query);
     ReservationVo selectOwnedReservationForUpdate(@Param("reservationId") Long reservationId,
             @Param("userId") Long userId);
     int cancelReservation(@Param("reservationId") Long reservationId, @Param("userId") Long userId,

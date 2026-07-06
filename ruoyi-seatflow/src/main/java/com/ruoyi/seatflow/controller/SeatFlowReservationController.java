@@ -2,14 +2,23 @@ package com.ruoyi.seatflow.controller;
 
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.seatflow.domain.dto.*;
+import com.ruoyi.seatflow.domain.dto.MyReservationQuery;
+import com.ruoyi.seatflow.domain.dto.ReservationCreateRequest;
+import com.ruoyi.seatflow.domain.dto.ReservationManageQuery;
+import com.ruoyi.seatflow.domain.dto.SeatAvailabilityQuery;
 import com.ruoyi.seatflow.service.ISeatFlowReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,7 +28,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/seatflow/reservation")
 public class SeatFlowReservationController extends BaseController
 {
-    @Autowired private ISeatFlowReservationService reservationService;
+    private final ISeatFlowReservationService reservationService;
+
+    public SeatFlowReservationController(ISeatFlowReservationService reservationService)
+    {
+        this.reservationService = reservationService;
+    }
 
     @PreAuthorize("@ss.hasPermi('seatflow:reservation:create')")
     @GetMapping("/campuses") public AjaxResult campuses() { return AjaxResult.success(reservationService.selectCampuses()); }
@@ -47,6 +61,15 @@ public class SeatFlowReservationController extends BaseController
         query.setUserId(SecurityUtils.getUserId());
         startPage();
         return getDataTable(reservationService.selectMyReservations(query));
+    }
+
+    @Operation(summary = "管理端分页查询全部预约")
+    @PreAuthorize("@ss.hasPermi('seatflow:reservation:list')")
+    @GetMapping("/manage")
+    public TableDataInfo manage(@ParameterObject ReservationManageQuery query)
+    {
+        startPage();
+        return getDataTable(reservationService.selectManagedReservations(query));
     }
 
     @Operation(summary = "取消我的预约")
