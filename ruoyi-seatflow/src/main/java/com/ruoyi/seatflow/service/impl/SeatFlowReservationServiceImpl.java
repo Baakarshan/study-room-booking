@@ -79,8 +79,7 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
 
   @Override
   @Transactional(rollbackFor = Exception.class)
-  public int createReservation(
-      Long userId, String username, ReservationCreateRequest request) {
+  public int createReservation(Long userId, String username, ReservationCreateRequest request) {
     requirePositiveId(userId, "当前用户不存在");
     if (request == null) {
       throw new ServiceException("预约参数不能为空");
@@ -106,8 +105,7 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
     if (reservationMapper.countDailyReservations(userId, request.getStartTime()) >= DAILY_LIMIT) {
       throw new ServiceException("每天最多预约1次");
     }
-    if (reservationMapper.countUserConflicts(
-            userId, request.getStartTime(), request.getEndTime())
+    if (reservationMapper.countUserConflicts(userId, request.getStartTime(), request.getEndTime())
         > 0) {
       throw new ServiceException("您在所选时间已有有效预约");
     }
@@ -167,8 +165,7 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
     if (reservation.getStartTime() == null || !now.before(reservation.getStartTime())) {
       throw new ServiceException("预约开始后不能取消");
     }
-    int affectedRows =
-        reservationMapper.cancelReservation(reservationId, userId, now, username);
+    int affectedRows = reservationMapper.cancelReservation(reservationId, userId, now, username);
     if (affectedRows != 1) {
       throw new ServiceException("预约状态已变化，请刷新后重试");
     }

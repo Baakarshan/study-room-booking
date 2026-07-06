@@ -82,8 +82,7 @@ class SeatFlowBaseInfoServiceImplTest {
     room.setCloseTime(LocalTime.of(8, 0));
     when(mapper.selectFloorById(1L)).thenReturn(new com.ruoyi.seatflow.domain.base.SeatFlowFloor());
 
-    ServiceException exception =
-        assertThrows(ServiceException.class, () -> service.saveRoom(room));
+    ServiceException exception = assertThrows(ServiceException.class, () -> service.saveRoom(room));
 
     assertEquals("开放时间必须早于关闭时间", exception.getMessage());
   }

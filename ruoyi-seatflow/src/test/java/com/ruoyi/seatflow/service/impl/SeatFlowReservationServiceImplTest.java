@@ -60,8 +60,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("预约时间必须在自习室开放时间内", exception.getMessage());
     verify(mapper, never()).selectUserForUpdate(any());
@@ -69,13 +68,11 @@ class SeatFlowReservationServiceImplTest {
 
   @Test
   void createReservationRejectsPastStartTime() {
-    ReservationCreateRequest request =
-        requestAt(LocalDate.now().minusDays(1), 10, 0, 11, 0);
+    ReservationCreateRequest request = requestAt(LocalDate.now().minusDays(1), 10, 0, 11, 0);
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("预约开始时间必须晚于当前时间", exception.getMessage());
     verify(mapper, never()).selectSeatForUpdate(any());
@@ -89,8 +86,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("当前用户已进入黑名单，无法预约", exception.getMessage());
     verify(mapper, never()).insertReservation(any(), any(), any(), any());
@@ -104,8 +100,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("每天最多预约1次", exception.getMessage());
     verify(mapper, never()).insertReservation(any(), any(), any(), any());
@@ -120,8 +115,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("您在所选时间已有有效预约", exception.getMessage());
     verify(mapper, never()).insertReservation(any(), any(), any(), any());
@@ -136,8 +130,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.createReservation(20L, "student01", request));
+            ServiceException.class, () -> service.createReservation(20L, "student01", request));
 
     assertEquals("该座位在所选时间已被预约", exception.getMessage());
     verify(mapper, never()).insertReservation(any(), any(), any(), any());
@@ -168,8 +161,7 @@ class SeatFlowReservationServiceImplTest {
 
     ServiceException exception =
         assertThrows(
-            ServiceException.class,
-            () -> service.cancelReservation(30L, 20L, "student01"));
+            ServiceException.class, () -> service.cancelReservation(30L, 20L, "student01"));
 
     assertEquals("预约开始后不能取消", exception.getMessage());
     verify(mapper, never()).cancelReservation(any(), any(), any(), any());
