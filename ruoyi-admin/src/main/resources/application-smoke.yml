@@ -1,0 +1,19 @@
+server:
+  port: ${SEATFLOW_SMOKE_BACKEND_PORT:18080}
+
+spring:
+  datasource:
+    druid:
+      master:
+        url: jdbc:mysql://${SEATFLOW_SMOKE_DB_HOST:127.0.0.1}:${SEATFLOW_SMOKE_DB_PORT:3306}/${SEATFLOW_SMOKE_DB_NAME:seatflow_smoke}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+        username: ${SEATFLOW_SMOKE_DB_USER:root}
+        password: ${SEATFLOW_SMOKE_DB_PASSWORD:password}
+  data:
+    redis:
+      host: ${SEATFLOW_SMOKE_REDIS_HOST:127.0.0.1}
+      port: ${SEATFLOW_SMOKE_REDIS_PORT:6379}
+      database: ${SEATFLOW_SMOKE_REDIS_DATABASE:15}
+
+logging:
+  level:
+    com.ruoyi: info
