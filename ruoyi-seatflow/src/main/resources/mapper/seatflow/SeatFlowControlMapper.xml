@@ -140,8 +140,9 @@
     </insert>
 
     <select id="selectViolations" resultType="com.ruoyi.seatflow.domain.ViolationRecord">
-        select v.violation_id, v.reservation_id, v.user_id, u.user_name, p.student_no,
-               v.reason, v.violation_time, v.status
+        select v.violation_id as violationId, v.reservation_id as reservationId,
+               v.user_id as userId, u.user_name as userName, p.student_no as studentNo,
+               v.reason, v.violation_time as violationTime, v.status
         from seatflow_violation_record v
         inner join sys_user u on u.user_id = v.user_id
         left join seatflow_user_profile p on p.user_id = v.user_id
@@ -158,8 +159,10 @@
     </select>
 
     <select id="selectBlacklist" resultType="com.ruoyi.seatflow.domain.BlacklistEntry">
-        select b.blacklist_id, b.user_id, u.user_name, u.nick_name, p.student_no,
-               p.violation_count, b.reason, b.start_time, b.end_time, b.status
+        select b.blacklist_id as blacklistId, b.user_id as userId,
+               u.user_name as userName, u.nick_name as nickName, p.student_no as studentNo,
+               p.violation_count as violationCount, b.reason,
+               b.start_time as startTime, b.end_time as endTime, b.status
         from seatflow_blacklist b
         inner join sys_user u on u.user_id = b.user_id
         inner join seatflow_user_profile p on p.user_id = b.user_id
@@ -174,7 +177,8 @@
     </select>
 
     <select id="selectBlacklistForUpdate" resultType="com.ruoyi.seatflow.domain.BlacklistEntry">
-        select blacklist_id, user_id, reason, start_time, end_time, status
+        select blacklist_id as blacklistId, user_id as userId, reason,
+               start_time as startTime, end_time as endTime, status
         from seatflow_blacklist
         where blacklist_id = #{blacklistId}
           and status = 'active'
@@ -195,7 +199,7 @@
     </update>
 
     <select id="selectProfile" resultType="com.ruoyi.seatflow.domain.vo.ControlProfileVo">
-        select coalesce(violation_count, 0) as violation_count,
+        select coalesce(violation_count, 0) as violationCount,
                case when blacklist_flag = 'yes' then true else false end as blacklisted
         from seatflow_user_profile
         where user_id = #{userId}

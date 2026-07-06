@@ -281,13 +281,13 @@ insert into seatflow_reservation
   (reservation_id, user_id, room_id, seat_id, start_time, end_time, check_deadline,
    status, complete_time, create_by, create_time)
 values
-  (1, 10, 1, 1, date_add(current_date, interval -39 hour),
+  (1, 10, 1, (select seat_id from seatflow_seat where room_id = 1 and seat_no = 'A01'), date_add(current_date, interval -39 hour),
    date_add(current_date, interval -38 hour), date_add(date_add(current_date, interval -39 hour), interval 15 minute),
    'completed', date_add(current_date, interval -38 hour), 'admin', date_add(current_date, interval -40 hour)),
-  (2, 11, 1, 2, date_add(current_date, interval -35 hour),
+  (2, 11, 1, (select seat_id from seatflow_seat where room_id = 1 and seat_no = 'A02'), date_add(current_date, interval -35 hour),
    date_add(current_date, interval -34 hour), date_add(date_add(current_date, interval -35 hour), interval 15 minute),
    'no_show', null, 'admin', date_add(current_date, interval -36 hour)),
-  (3, 10, 2, 21, date_add(current_date, interval -15 hour),
+  (3, 10, 2, (select seat_id from seatflow_seat where room_id = 2 and seat_no = 'A01'), date_add(current_date, interval -15 hour),
    date_add(current_date, interval -14 hour), date_add(date_add(current_date, interval -15 hour), interval 15 minute),
    'completed', date_add(current_date, interval -14 hour), 'admin', date_add(current_date, interval -16 hour));
 
