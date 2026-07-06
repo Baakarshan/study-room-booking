@@ -2,7 +2,7 @@ package com.ruoyi.seatflow.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.exception.ServiceException;
@@ -18,8 +18,12 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
     private static final String ENABLED = "enabled";
     private static final String DISABLED = "disabled";
 
-    @Autowired
-    private SeatFlowBaseInfoMapper mapper;
+    private final SeatFlowBaseInfoMapper mapper;
+
+    public SeatFlowBaseInfoServiceImpl(SeatFlowBaseInfoMapper mapper)
+    {
+        this.mapper = mapper;
+    }
 
     public List<SeatFlowCampus> selectCampusList(SeatFlowCampus q) { return mapper.selectCampusList(q); }
     public SeatFlowCampus selectCampusById(Long id) { return mapper.selectCampusById(id); }
@@ -35,7 +39,14 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
     public int saveCampus(SeatFlowCampus e)
     {
         normalize(e);
-        return e.getCampusId() == null ? mapper.insertCampus(e) : mapper.updateCampus(e);
+        try
+        {
+            return e.getCampusId() == null ? mapper.insertCampus(e) : mapper.updateCampus(e);
+        }
+        catch (DuplicateKeyException ex)
+        {
+            throw new ServiceException("校区名称已存在");
+        }
     }
 
     @Transactional
@@ -51,7 +62,14 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
     {
         normalize(e);
         requireExists(mapper.selectCampusById(e.getCampusId()), "所属校区不存在");
-        return e.getBuildingId() == null ? mapper.insertBuilding(e) : mapper.updateBuilding(e);
+        try
+        {
+            return e.getBuildingId() == null ? mapper.insertBuilding(e) : mapper.updateBuilding(e);
+        }
+        catch (DuplicateKeyException ex)
+        {
+            throw new ServiceException("同一校区内楼栋名称不能重复");
+        }
     }
 
     @Transactional
@@ -67,7 +85,14 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
     {
         normalize(e);
         requireExists(mapper.selectBuildingById(e.getBuildingId()), "所属楼栋不存在");
-        return e.getFloorId() == null ? mapper.insertFloor(e) : mapper.updateFloor(e);
+        try
+        {
+            return e.getFloorId() == null ? mapper.insertFloor(e) : mapper.updateFloor(e);
+        }
+        catch (DuplicateKeyException ex)
+        {
+            throw new ServiceException("同一楼栋内楼层编号不能重复");
+        }
     }
 
     @Transactional
@@ -92,7 +117,14 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
             if (!old.getRowCount().equals(e.getRowCount()) || !old.getColCount().equals(e.getColCount()))
                 throw new ServiceException("自习室已有座位，不能修改行列数");
         }
-        return e.getRoomId() == null ? mapper.insertRoom(e) : mapper.updateRoom(e);
+        try
+        {
+            return e.getRoomId() == null ? mapper.insertRoom(e) : mapper.updateRoom(e);
+        }
+        catch (DuplicateKeyException ex)
+        {
+            throw new ServiceException("同一楼层内自习室名称不能重复");
+        }
     }
 
     @Transactional
@@ -135,10 +167,10 @@ public class SeatFlowBaseInfoServiceImpl implements ISeatFlowBaseInfoService
         return mapper.updateSeatStatus(seatId, status, operator);
     }
 
-    private void normalize(SeatFlowCampus e) { e.setStatus(normalizeStatus(e.getStatus())); }
-    private void normalize(SeatFlowBuilding e) { e.setStatus(normalizeStatus(e.getStatus())); }
-    private void normalize(SeatFlowFloor e) { e.setStatus(normalizeStatus(e.getStatus())); }
-    private void normalize(SeatFlowRoom e) { e.setStatus(normalizeStatus(e.getStatus())); }
+    private void normalize(SeatFlowCampus e) { e.setCampusName(e.getCampusName().trim()); e.setStatus(normalizeStatus(e.getStatus())); }
+    private void normalize(SeatFlowBuilding e) { e.setBuildingName(e.getBuildingName().trim()); e.setStatus(normalizeStatus(e.getStatus())); }
+    private void normalize(SeatFlowFloor e) { e.setFloorName(e.getFloorName().trim()); e.setStatus(normalizeStatus(e.getStatus())); }
+    private void normalize(SeatFlowRoom e) { e.setRoomName(e.getRoomName().trim()); e.setStatus(normalizeStatus(e.getStatus())); }
     private String normalizeStatus(String status)
     {
         status = StringUtils.isBlank(status) ? ENABLED : status.trim();

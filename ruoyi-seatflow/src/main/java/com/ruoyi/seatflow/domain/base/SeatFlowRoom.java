@@ -32,7 +32,7 @@ public class SeatFlowRoom extends BaseEntity
     public void setFloorId(Long floorId) { this.floorId = floorId; }
     public String getFloorName() { return floorName; }
     public void setFloorName(String floorName) { this.floorName = floorName; }
-    @NotBlank(message = "自习室名称不能为空") @Size(max = 100, message = "自习室名称不能超过100个字符")
+    @NotBlank(message = "自习室名称不能为空") @Size(max = 64, message = "自习室名称不能超过64个字符")
     public String getRoomName() { return roomName; }
     public void setRoomName(String roomName) { this.roomName = roomName; }
     @NotNull(message = "座位行数不能为空") @Min(value = 1, message = "座位行数至少为1") @Max(value = 26, message = "座位行数不能超过26")

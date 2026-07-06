@@ -16,7 +16,7 @@ public class SeatFlowCampus extends BaseEntity
     public Long getCampusId() { return campusId; }
     public void setCampusId(Long campusId) { this.campusId = campusId; }
     @NotBlank(message = "校区名称不能为空")
-    @Size(max = 100, message = "校区名称不能超过100个字符")
+    @Size(max = 64, message = "校区名称不能超过64个字符")
     public String getCampusName() { return campusName; }
     public void setCampusName(String campusName) { this.campusName = campusName; }
     @Size(max = 255, message = "地址不能超过255个字符")

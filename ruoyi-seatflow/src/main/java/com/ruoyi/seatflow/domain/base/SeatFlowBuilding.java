@@ -1,6 +1,7 @@
 package com.ruoyi.seatflow.domain.base;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,10 +25,10 @@ public class SeatFlowBuilding extends BaseEntity
     public void setCampusId(Long campusId) { this.campusId = campusId; }
     public String getCampusName() { return campusName; }
     public void setCampusName(String campusName) { this.campusName = campusName; }
-    @NotBlank(message = "楼栋名称不能为空") @Size(max = 100, message = "楼栋名称不能超过100个字符")
+    @NotBlank(message = "楼栋名称不能为空") @Size(max = 64, message = "楼栋名称不能超过64个字符")
     public String getBuildingName() { return buildingName; }
     public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
-    @Min(value = 1, message = "楼层数至少为1")
+    @Min(value = 1, message = "楼层数至少为1") @Max(value = 99, message = "楼层数不能超过99")
     public Integer getFloorCount() { return floorCount; }
     public void setFloorCount(Integer floorCount) { this.floorCount = floorCount; }
     public String getStatus() { return status; }

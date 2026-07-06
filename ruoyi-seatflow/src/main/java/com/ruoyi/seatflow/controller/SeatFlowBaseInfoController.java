@@ -1,7 +1,6 @@
 package com.ruoyi.seatflow.controller;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +17,12 @@ import com.ruoyi.seatflow.service.ISeatFlowBaseInfoService;
 @RequestMapping("/seatflow/base")
 public class SeatFlowBaseInfoController extends BaseController
 {
-    @Autowired
-    private ISeatFlowBaseInfoService service;
+    private final ISeatFlowBaseInfoService service;
+
+    public SeatFlowBaseInfoController(ISeatFlowBaseInfoService service)
+    {
+        this.service = service;
+    }
 
     @PreAuthorize("@ss.hasPermi('seatflow:base:campus:list')")
     @GetMapping("/campus/list")
