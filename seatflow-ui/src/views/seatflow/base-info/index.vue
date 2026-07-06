@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <div class="page-heading"><div><h2>学习空间管理</h2><p>按“校区 → 楼栋 → 楼层 → 自习室 → 座位”维护基础数据。</p></div><el-tag type="info" effect="plain">当前：{{ current.label }}</el-tag></div>
+    <el-alert title="删除上级空间前，请先清理其下级数据；生成座位后可在“座位”页签调整启停状态。" type="info" :closable="false" class="guide-alert" show-icon />
     <el-tabs v-model="active" @tab-change="load">
       <el-tab-pane v-for="item in tabs" :key="item.key" :label="item.label" :name="item.key" />
     </el-tabs>
@@ -9,7 +11,7 @@
       <el-form-item><el-button type="primary" icon="Search" @click="search">查询</el-button><el-button icon="Refresh" @click="resetQuery">重置</el-button><el-button v-if="active !== 'seat'" type="primary" plain icon="Plus" @click="openForm()">新增</el-button></el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="rows">
+    <el-table v-loading="loading" :data="rows" :empty-text="`暂无${current.label}数据，可点击新增开始维护`">
       <el-table-column v-for="col in current.columns" :key="col.prop" :prop="col.prop" :label="col.label" :min-width="col.width || 100" />
       <el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="scope.row.status === 'enabled' ? 'success' : 'info'">{{ scope.row.status === 'enabled' ? '启用' : '停用' }}</el-tag></template></el-table-column>
       <el-table-column label="操作" width="240" fixed="right">
@@ -41,7 +43,7 @@
           <el-form-item label="开放时段" required><el-time-picker v-model="roomTimes" is-range value-format="HH:mm:ss" range-separator="至" start-placeholder="开放时间" end-placeholder="关闭时间" /></el-form-item>
         </template>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio value="enabled">启用</el-radio><el-radio value="disabled">停用</el-radio></el-radio-group></el-form-item>
-        <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" /></el-form-item>
+        <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" maxlength="200" show-word-limit /></el-form-item>
       </el-form>
       <template #footer><el-button @click="visible=false">取消</el-button><el-button type="primary" @click="submit">确定</el-button></template>
     </el-dialog>
@@ -81,3 +83,8 @@ function generate(row) { proxy.$modal.confirm(`将按 ${row.rowCount}×${row.col
 function toggleSeat(row) { updateSeatStatus(row.seatId,row.status==='enabled'?'disabled':'enabled').then(()=>{proxy.$modal.msgSuccess('状态更新成功');load()}) }
 load()
 </script>
+
+<style scoped lang="scss">
+.page-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;h2{margin:0 0 6px;font-size:22px}p{margin:0;color:var(--el-text-color-secondary)}}.guide-alert{margin-bottom:12px}
+@media(max-width:600px){.page-heading p{max-width:250px}}
+</style>

@@ -32,6 +32,14 @@ export function listMyReservations(query) {
   })
 }
 
+export function listManagedReservations(query) {
+  return request({
+    url: '/seatflow/reservation/manage',
+    method: 'get',
+    params: query
+  })
+}
+
 export function cancelReservation(reservationId) {
   return request({ url: `/seatflow/reservation/${reservationId}`, method: 'delete' })
 }
