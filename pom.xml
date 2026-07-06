@@ -209,6 +209,34 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
             </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <!-- 只规范 SeatFlow 自有代码，避免批量改写 RuoYi 上游模块。 -->
+                    <java>
+                        <includes>
+                            <include>src/main/java/com/ruoyi/seatflow/**/*.java</include>
+                            <include>src/test/java/com/ruoyi/seatflow/**/*.java</include>
+                            <include>src/main/java/com/ruoyi/RuoYi*.java</include>
+                        </includes>
+                        <googleJavaFormat />
+                        <removeUnusedImports />
+                        <trimTrailingWhitespace />
+                        <endWithNewline />
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>seatflow-style-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
