@@ -54,7 +54,8 @@
 
 <script setup name="SeatFlowReservationManage">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { listCampuses, listBuildings, listFloors, listRooms, listManagedReservations } from '@/api/seatflow/reservation'
+import { fixMojibake } from '@/utils/text'
+import { listReservationCampuses, listReservationBuildings, listReservationFloors, listReservationRooms, listManagedReservations } from '@/api/seatflow/reservation'
 
 const statuses = [
   { value: 'pending_checkin', label: '待签到' }, { value: 'in_use', label: '使用中' },
@@ -65,10 +66,11 @@ const query = reactive({ pageNum: 1, pageSize: 10, userName: undefined, studentN
 const rows = ref([]), total = ref(0), loading = ref(false), dateRange = ref([])
 const campuses = ref([]), buildings = ref([]), floors = ref([]), rooms = ref([])
 const statusSummary = computed(() => statuses.map(item => ({ ...item, count: rows.value.filter(row => row.status === item.value).length })))
+const normalizeOption = item => ({ ...item, name: fixMojibake(item.name) })
 
-async function campusChanged(id) { Object.assign(query, { buildingId: undefined, floorId: undefined, roomId: undefined }); buildings.value = id ? (await listBuildings(id)).data || [] : []; floors.value = []; rooms.value = [] }
-async function buildingChanged(id) { Object.assign(query, { floorId: undefined, roomId: undefined }); floors.value = id ? (await listFloors(id)).data || [] : []; rooms.value = [] }
-async function floorChanged(id) { query.roomId = undefined; rooms.value = id ? (await listRooms(id)).data || [] : [] }
+async function campusChanged(id) { Object.assign(query, { buildingId: undefined, floorId: undefined, roomId: undefined }); buildings.value = id ? (((await listReservationBuildings(id)).data) || []).map(normalizeOption) : []; floors.value = []; rooms.value = [] }
+async function buildingChanged(id) { Object.assign(query, { floorId: undefined, roomId: undefined }); floors.value = id ? (((await listReservationFloors(id)).data) || []).map(normalizeOption) : []; rooms.value = [] }
+async function floorChanged(id) { query.roomId = undefined; rooms.value = id ? (((await listReservationRooms(id)).data) || []).map(normalizeOption) : [] }
 async function load() {
   loading.value = true
   try {
@@ -83,7 +85,7 @@ function selectStatus(status) { query.status = query.status === status ? undefin
 function locationText(row) { return [row.campusName, row.buildingName, row.floorName, row.roomName].filter(Boolean).join(' / ') || '-' }
 function statusLabel(value) { return statuses.find(item => item.value === value)?.label || value }
 function statusType(value) { return ({ pending_checkin: 'warning', in_use: 'primary', completed: 'success', cancelled: 'info', no_show: 'danger' })[value] || 'info' }
-onMounted(async () => { campuses.value = (await listCampuses()).data || []; load() })
+onMounted(async () => { campuses.value = (((await listReservationCampuses()).data) || []).map(normalizeOption); load() })
 </script>
 
 <style scoped lang="scss">

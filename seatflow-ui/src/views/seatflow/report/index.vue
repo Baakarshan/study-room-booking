@@ -94,7 +94,12 @@ import {
   getUsageRate,
   getUsageSummary
 } from '@/api/seatflow/report'
-import { listBuildings, listCampuses, listFloors, listRooms } from '@/api/seatflow/reservation'
+import {
+  listReservationBuildings,
+  listReservationCampuses,
+  listReservationFloors,
+  listReservationRooms
+} from '@/api/seatflow/reservation'
 
 const loading = ref(false)
 const filters = reactive({ campusId: undefined, buildingId: undefined, floorId: undefined, roomId: undefined })
@@ -255,15 +260,15 @@ function resetFilters() {
 
 async function campusChanged(id) {
   Object.assign(filters, { buildingId: undefined, floorId: undefined, roomId: undefined })
-  buildings.value = id ? (await listBuildings(id)).data || [] : []; floors.value = []; rooms.value = []
+  buildings.value = id ? (await listReservationBuildings(id)).data || [] : []; floors.value = []; rooms.value = []
 }
 async function buildingChanged(id) {
   Object.assign(filters, { floorId: undefined, roomId: undefined })
-  floors.value = id ? (await listFloors(id)).data || [] : []; rooms.value = []
+  floors.value = id ? (await listReservationFloors(id)).data || [] : []; rooms.value = []
 }
 async function floorChanged(id) {
   filters.roomId = undefined
-  rooms.value = id ? (await listRooms(id)).data || [] : []
+  rooms.value = id ? (await listReservationRooms(id)).data || [] : []
 }
 
 function disableFutureDate(date) {
@@ -276,7 +281,7 @@ function resizeCharts() {
 
 onMounted(() => {
   window.addEventListener('resize', resizeCharts)
-  listCampuses().then(res => { campuses.value = res.data || [] })
+  listReservationCampuses().then(res => { campuses.value = res.data || [] })
   loadReport()
 })
 

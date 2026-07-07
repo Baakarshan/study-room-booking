@@ -24,18 +24,21 @@
 <script setup name="SeatFlowReservation">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { createReservation,listAvailableSeats,listBuildings,listCampuses,listFloors,listRooms } from '@/api/seatflow/reservation'
+import { fixMojibake } from '@/utils/text'
+import { createReservation,listReservationSeats,listReservationBuildings,listReservationCampuses,listReservationFloors,listReservationRooms } from '@/api/seatflow/reservation'
 const query=reactive({campusId:undefined,buildingId:undefined,floorId:undefined,roomId:undefined})
 const campuses=ref([]),buildings=ref([]),floors=ref([]),rooms=ref([]),seats=ref([]),timeRange=ref([]),selectedSeatId=ref(),loading=ref(false),submitting=ref(false)
 const canSearch=computed(()=>query.roomId&&timeRange.value?.length===2),selectedSeat=computed(()=>seats.value.find(item=>item.seatId===selectedSeatId.value)),selectedRoom=computed(()=>rooms.value.find(item=>item.id===query.roomId)),availableCount=computed(()=>seats.value.filter(item=>item.status==='available').length),step=computed(()=>selectedSeat.value?3:seats.value.length?2:query.roomId?1:0)
 const gridStyle=computed(()=>({gridTemplateColumns:`repeat(${Math.max(...seats.value.map(s=>s.colNum),1)}, minmax(58px, 82px))`})),disablePastDate=date=>date.getTime()<new Date().setHours(0,0,0,0)
+const normalizeOption=item=>({ ...item, name: fixMojibake(item.name) })
+const normalizeSeat=item=>({ ...item, seatNo: fixMojibake(item.seatNo) })
 function formatDateTime(date){const pad=value=>String(value).padStart(2,'0');return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:00`}
 function useTomorrowMorning(){const start=new Date();start.setDate(start.getDate()+1);start.setHours(10,0,0,0);const end=new Date(start);end.setHours(11);timeRange.value=[formatDateTime(start),formatDateTime(end)];resetSeats()}
-onMounted(async()=>{campuses.value=(await listCampuses()).data||[]})
-async function campusChanged(id){Object.assign(query,{buildingId:undefined,floorId:undefined,roomId:undefined});buildings.value=id?(await listBuildings(id)).data||[]:[];floors.value=[];rooms.value=[];resetSeats()}
-async function buildingChanged(id){Object.assign(query,{floorId:undefined,roomId:undefined});floors.value=id?(await listFloors(id)).data||[]:[];rooms.value=[];resetSeats()}
-async function floorChanged(id){query.roomId=undefined;rooms.value=id?(await listRooms(id)).data||[]:[];resetSeats()} function roomChanged(){resetSeats()} function resetSeats(){seats.value=[];selectedSeatId.value=undefined}
-async function loadSeats(){loading.value=true;selectedSeatId.value=undefined;try{seats.value=(await listAvailableSeats({roomId:query.roomId,startTime:timeRange.value[0],endTime:timeRange.value[1]})).data||[]}finally{loading.value=false}}
+onMounted(async()=>{campuses.value=((await listReservationCampuses()).data||[]).map(normalizeOption)})
+async function campusChanged(id){Object.assign(query,{buildingId:undefined,floorId:undefined,roomId:undefined});buildings.value=id?(((await listReservationBuildings(id)).data)||[]).map(normalizeOption):[];floors.value=[];rooms.value=[];resetSeats()}
+async function buildingChanged(id){Object.assign(query,{floorId:undefined,roomId:undefined});floors.value=id?(((await listReservationFloors(id)).data)||[]).map(normalizeOption):[];rooms.value=[];resetSeats()}
+async function floorChanged(id){query.roomId=undefined;rooms.value=id?(((await listReservationRooms(id)).data)||[]).map(normalizeOption):[];resetSeats()} function roomChanged(){resetSeats()} function resetSeats(){seats.value=[];selectedSeatId.value=undefined}
+async function loadSeats(){loading.value=true;selectedSeatId.value=undefined;try{seats.value=(((await listReservationSeats({roomId:query.roomId,startTime:timeRange.value[0],endTime:timeRange.value[1]})).data)||[]).map(normalizeSeat)}finally{loading.value=false}}
 async function submit(){await ElMessageBox.confirm(`确认预约 ${selectedRoom.value?.name} ${selectedSeat.value.seatNo}？`,'确认预约',{type:'info'});submitting.value=true;try{await createReservation({roomId:query.roomId,seatId:selectedSeatId.value,startTime:timeRange.value[0],endTime:timeRange.value[1]});ElMessage.success('预约成功，可在“我的预约”中查看');await loadSeats()}finally{submitting.value=false}}
 </script>
 

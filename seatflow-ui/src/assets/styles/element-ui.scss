@@ -94,3 +94,77 @@
 .el-dropdown .el-dropdown-link{
   color: var(--el-color-primary) !important;
 }
+
+/* ==================== SeatFlow 全局 Element Plus 覆盖 ==================== */
+
+/* 按钮 pill 形状 */
+.el-button {
+  border-radius: 999px !important;
+}
+
+/* 输入框圆角 */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select .el-input__wrapper {
+  border-radius: 10px !important;
+}
+
+/* 对话框去掉阴影 */
+.el-dialog {
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+/* 表格去外边框、去圆角、暖色系 */
+.el-table {
+  border: none !important;
+  border-radius: 0 !important;
+
+  .el-table__inner-wrapper::before {
+    display: none;
+  }
+
+  .el-table__header-wrapper,
+  .el-table__fixed-header-wrapper {
+    th.el-table__cell {
+      background-color: #F9F8F6 !important;
+      color: #2C2621 !important;
+      font-weight: 600;
+      border-bottom-color: #D9CFC7 !important;
+    }
+  }
+
+  td.el-table__cell {
+    border-bottom-color: #D9CFC7 !important;
+  }
+
+  tr:hover > td.el-table__cell {
+    background-color: #F9F8F6 !important;
+  }
+}
+
+/* 标签 */
+.el-tag {
+  border-radius: 4px !important;
+  border-width: 0 !important;
+}
+
+.el-tag--success {
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.el-tag--danger {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.el-tag--warning {
+  background-color: #fffbeb;
+  color: #a16207;
+}
+
+.el-tag--info {
+  background-color: #f5f5f4;
+  color: #57534e;
+}
