@@ -37,6 +37,7 @@ public class SeatFlowReportServiceImpl implements ISeatFlowReportService {
   public static final String METRIC_USAGE_RATE = "usage_rate";
 
   public static final String SLOT_TYPE_HOUR = "hour";
+  public static final String SLOT_TYPE_HALF_HOUR = "half_hour";
 
   private static final Set<String> ALL_METRICS =
       new HashSet<String>(
@@ -52,6 +53,8 @@ public class SeatFlowReportServiceImpl implements ISeatFlowReportService {
   private static final Set<String> ROOM_RANKING_METRICS =
       new HashSet<String>(
           Arrays.asList(METRIC_RESERVATION_COUNT, METRIC_CHECKIN_COUNT, METRIC_USAGE_RATE));
+  private static final Set<String> SLOT_TYPES =
+      new HashSet<String>(Arrays.asList(SLOT_TYPE_HOUR, SLOT_TYPE_HALF_HOUR));
 
   @Autowired private SeatFlowReportMapper reportMapper;
 
@@ -117,9 +120,8 @@ public class SeatFlowReportServiceImpl implements ISeatFlowReportService {
     if (StringUtils.isNotBlank(query.getMetric()) && !ALL_METRICS.contains(query.getMetric())) {
       throw new ServiceException("报表指标参数不合法");
     }
-    if (StringUtils.isNotBlank(query.getSlotType())
-        && !SLOT_TYPE_HOUR.equals(query.getSlotType())) {
-      throw new ServiceException("热门时段第一版只支持按小时统计");
+    if (StringUtils.isNotBlank(query.getSlotType()) && !SLOT_TYPES.contains(query.getSlotType())) {
+      throw new ServiceException("热门时段只支持按小时或半小时统计");
     }
   }
 

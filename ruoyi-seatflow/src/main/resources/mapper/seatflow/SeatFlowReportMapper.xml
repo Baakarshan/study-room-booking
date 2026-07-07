@@ -172,7 +172,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectUsageRate" parameterType="ReportQuery" resultMap="UsageRateResult">
-        with room_scope as (
+        with recursive report_dates as (
+            select date(#{beginTime}) as report_date
+            union all
+            select date_add(report_date, interval 1 day)
+            from report_dates
+            where report_date &lt; date(#{endTime})
+        ),
+        room_scope as (
             <include refid="roomScopeSelect" />
         ),
         room_available as (
@@ -184,7 +191,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             group by rs.room_id, rs.room_name, rs.open_time, rs.close_time
         ),
         room_usage as (
-            select date_format(date(r.start_time), '%Y-%m-%d') as report_date,
+            select date(greatest(r.start_time, #{beginTime})) as report_date,
                    r.room_id,
                    coalesce(sum(greatest(0, timestampdiff(minute,
                        greatest(r.start_time, #{beginTime}),
@@ -193,9 +200,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             from seatflow_reservation r
             inner join room_scope rs on rs.room_id = r.room_id
             where <include refid="usageReservationOverlap" />
-            group by date_format(date(r.start_time), '%Y-%m-%d'), r.room_id
+            group by date(greatest(r.start_time, #{beginTime})), r.room_id
         )
-        select ru.report_date,
+        select date_format(rd.report_date, '%Y-%m-%d') as report_date,
                ra.room_id,
                ra.room_name,
                coalesce(ru.usage_minutes, 0) as usage_minutes,
@@ -203,33 +210,58 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                case when coalesce(ra.available_minutes, 0) = 0 then 0
                     else round(coalesce(ru.usage_minutes, 0) / ra.available_minutes, 4)
                end as usage_rate
-        from room_usage ru
-        inner join room_available ra on ra.room_id = ru.room_id
-        order by ru.report_date asc, ra.room_id asc
+        from report_dates rd
+        cross join room_available ra
+        left join room_usage ru on ru.report_date = rd.report_date and ru.room_id = ra.room_id
+        order by rd.report_date asc, ra.room_id asc
     </select>
 
     <select id="selectPopularSlots" parameterType="ReportQuery" resultMap="PopularSlotResult">
         with room_scope as (
             <include refid="roomScopeSelect" />
         ),
-        reservation_slots as (
-            select date_format(r.start_time, '%H:00') as slot_label,
-                   count(r.reservation_id) as reservation_count
+        valid_reservations as (
+            select r.reservation_id,
+                   <choose>
+                       <when test="slotType == 'half_hour'">
+                           concat(date_format(r.start_time, '%H:'), case when minute(r.start_time) &lt; 30 then '00' else '30' end)
+                       </when>
+                       <otherwise>
+                           date_format(r.start_time, '%H:00')
+                       </otherwise>
+                   </choose> as slot_label
             from seatflow_reservation r
             inner join room_scope rs on rs.room_id = r.room_id
             where <include refid="validReservationOverlap" />
-            group by date_format(r.start_time, '%H:00')
         ),
-        checkin_slots as (
-            select date_format(r.start_time, '%H:00') as slot_label,
-                   count(distinct c.checkin_id) as checkin_count
+        valid_checkins as (
+            select distinct c.checkin_id,
+                   <choose>
+                       <when test="slotType == 'half_hour'">
+                           concat(date_format(r.start_time, '%H:'), case when minute(r.start_time) &lt; 30 then '00' else '30' end)
+                       </when>
+                       <otherwise>
+                           date_format(r.start_time, '%H:00')
+                       </otherwise>
+                   </choose> as slot_label
             from seatflow_checkin_record c
             inner join seatflow_reservation r on r.reservation_id = c.reservation_id
             inner join room_scope rs on rs.room_id = r.room_id
             where c.status = 'active'
               and r.start_time &lt; #{endTime}
               and r.end_time &gt; #{beginTime}
-            group by date_format(r.start_time, '%H:00')
+        ),
+        reservation_slots as (
+            select slot_label,
+                   count(reservation_id) as reservation_count
+            from valid_reservations
+            group by slot_label
+        ),
+        checkin_slots as (
+            select slot_label,
+                   count(checkin_id) as checkin_count
+            from valid_checkins
+            group by slot_label
         )
         select rs.slot_label,
                coalesce(rs.reservation_count, 0) as reservation_count,

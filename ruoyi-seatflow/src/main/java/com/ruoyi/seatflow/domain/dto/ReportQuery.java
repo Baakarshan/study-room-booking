@@ -40,8 +40,8 @@ public class ReportQuery {
   private String metric;
 
   @Schema(
-      description = "时段类型，目前仅支持 hour",
-      allowableValues = {"hour"},
+      description = "时段类型：hour 小时，half_hour 半小时",
+      allowableValues = {"hour", "half_hour"},
       example = "hour")
   private String slotType;
 
