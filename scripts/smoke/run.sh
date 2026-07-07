@@ -10,7 +10,7 @@ resolve_maven_cmd() {
   if [[ -n "$MAVEN_CMD" ]]; then
     return
   fi
-  if command -v mvn >/dev/null 2>&1; then
+  if command -v mvn >/dev/null 2>&1 && mvn -v >/dev/null 2>&1; then
     MAVEN_CMD="mvn"
     return
   fi

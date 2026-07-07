@@ -1,6 +1,18 @@
 import mysql from 'mysql2/promise'
 
 const backendUrl = process.env.SEATFLOW_SMOKE_BACKEND_URL || 'http://127.0.0.1:18080'
+const APP_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000
+
+function formatAppDate(offsetMs = 0) {
+  const date = new Date(Date.now() + offsetMs + APP_TIMEZONE_OFFSET_MS)
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  const hour = String(date.getUTCHours()).padStart(2, '0')
+  const minute = String(date.getUTCMinutes()).padStart(2, '0')
+  const second = String(date.getUTCSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
+}
 
 async function findSeatId(connection, roomId, seatNo) {
   const [[seat]] = await connection.execute(
@@ -68,12 +80,14 @@ export async function insertCheckinReadyReservation() {
   const connection = await connectDatabase()
   try {
     const seatId = await findSeatId(connection, 1, 'A04')
+    const startTime = formatAppDate(-60 * 60 * 1000)
+    const endTime = formatAppDate(24 * 60 * 60 * 1000)
+    const checkDeadline = formatAppDate(12 * 60 * 60 * 1000)
     const [result] = await connection.execute(
       `insert into seatflow_reservation
        (user_id, room_id, seat_id, start_time, end_time, check_deadline, status, create_by, create_time)
-       values (10, 1, ?, now() - interval 1 minute, now() + interval 1 hour,
-               now() + interval 14 minute, 'pending_checkin', 'smoke', now())`,
-      [seatId]
+       values (10, 1, ?, ?, ?, ?, 'pending_checkin', 'smoke', now())`,
+      [seatId, startTime, endTime, checkDeadline]
     )
     return result.insertId
   } finally {
@@ -85,12 +99,14 @@ export async function insertEndedReservation() {
   const connection = await connectDatabase()
   try {
     const seatId = await findSeatId(connection, 1, 'A05')
+    const startTime = formatAppDate(-24 * 60 * 60 * 1000)
+    const endTime = formatAppDate(-2 * 60 * 60 * 1000)
+    const checkDeadline = formatAppDate(-23 * 60 * 60 * 1000)
     const [result] = await connection.execute(
       `insert into seatflow_reservation
        (user_id, room_id, seat_id, start_time, end_time, check_deadline, status, create_by, create_time)
-       values (11, 1, ?, now() - interval 1 hour, now() - interval 1 minute,
-               now() - interval 45 minute, 'in_use', 'smoke', now() - interval 1 hour)`,
-      [seatId]
+       values (11, 1, ?, ?, ?, ?, 'in_use', 'smoke', now() - interval 1 day)`,
+      [seatId, startTime, endTime, checkDeadline]
     )
     return result.insertId
   } finally {

@@ -15,14 +15,14 @@ import {
 test.describe.serial('SeatFlow 课程项目主链路', () => {
   test('管理员维护空间并查看预约与报表', async ({ page }) => {
     await loginPage(page, 'admin')
-    await expect(page.getByText('管理工作台')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible()
 
     await page.goto('/seatflow/base-info')
-    await page.getByRole('button', { name: '新增' }).click()
+    await page.getByRole('button', { name: '新增校区' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('textbox', { name: /校区名称/ }).fill('冒烟测试校区')
     await dialog.getByRole('textbox', { name: '地址' }).fill('自动化测试地址')
-    await dialog.getByRole('button', { name: '确定' }).click()
+    await dialog.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('冒烟测试校区')).toBeVisible()
 
     await page.goto('/seatflow/reservation-manage')
@@ -50,13 +50,13 @@ test.describe.serial('SeatFlow 课程项目主链路', () => {
     await page.getByRole('button', { name: '查询空闲座位' }).click()
     await page.getByRole('button', { name: 'A03 available' }).click()
     await page.getByRole('button', { name: '确认预约' }).click()
-    await page.getByRole('button', { name: '确定' }).click()
+    await page.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('预约成功，可在“我的预约”中查看')).toBeVisible()
 
     await page.goto('/seatflow/my-reservation')
     await expect(page.getByText('待签到').first()).toBeVisible()
     await page.getByRole('button', { name: '取消预约' }).click()
-    await page.getByRole('button', { name: '确定' }).click()
+    await page.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('预约已取消')).toBeVisible()
   })
 
@@ -66,12 +66,12 @@ test.describe.serial('SeatFlow 课程项目主链路', () => {
     await loginPage(page, 'student01')
     await page.goto('/seatflow/control')
     await expect(page.getByText('A04')).toBeVisible()
-    await page.getByRole('button', { name: '签到' }).click()
+    await page.getByRole('button', { name: '立即签到' }).click()
     await expect(page.getByText('签到成功')).toBeVisible()
 
     await page.goto('/seatflow/my-reservation')
     await page.getByRole('button', { name: '结束使用' }).click()
-    await page.getByRole('button', { name: '确定' }).click()
+    await page.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('本次使用已结束')).toBeVisible()
 
     const endedId = await insertEndedReservation()
@@ -107,13 +107,19 @@ test.describe.serial('SeatFlow 课程项目主链路', () => {
     await page.goto('/seatflow/blacklist')
     await expect(page.getByText('学生二')).toBeVisible()
     await page.getByRole('button', { name: '解除限制' }).click()
-    await page.getByRole('button', { name: '确定' }).click()
+    await page.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('黑名单已解除')).toBeVisible()
     await expect.poll(studentControlState).toMatchObject({ violationCount: 0, blacklistFlag: 'no' })
 
+    await page.evaluate(() => {
+      window.localStorage.clear()
+      window.sessionStorage.clear()
+    })
     await page.context().clearCookies()
+    await page.reload()
     await loginPage(page, 'student02')
-    await expect(page.getByText('基础信息')).toHaveCount(0)
-    await expect(page.getByText('预约管理')).toHaveCount(0)
+    const topNav = page.getByRole('banner').getByRole('navigation')
+    await expect(topNav.getByRole('link', { name: '基础信息' })).toHaveCount(0)
+    await expect(topNav.getByRole('link', { name: '预约管理' })).toHaveCount(0)
   })
 })
