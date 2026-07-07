@@ -2,7 +2,6 @@
   <header class="top-nav">
     <div class="nav-brand">
       <router-link to="/" class="brand-link">
-        <img v-if="logo" :src="logo" class="brand-logo" />
         <span class="brand-name">{{ title }}</span>
       </router-link>
     </div>
@@ -44,7 +43,6 @@ import { ElMessageBox } from 'element-plus'
 import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
 import usePermissionStore from '@/store/modules/permission'
-import logo from '@/assets/logo/logo.png'
 
 const title = import.meta.env.VITE_APP_TITLE
 const appStore = useAppStore()
@@ -130,19 +128,13 @@ function handleCommand(command) {
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 10px;
   text-decoration: none;
-
-  .brand-logo {
-    width: 32px;
-    height: 32px;
-  }
 
   .brand-name {
     font-size: 18px;
     font-weight: 700;
     color: #2C2621;
-    letter-spacing: -0.3px;
+    letter-spacing: 0;
   }
 }
 

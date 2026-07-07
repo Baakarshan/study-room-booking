@@ -1,12 +1,10 @@
 <template>
-  <div class="sidebar-logo-container" :class="{ 'collapse': collapse }">
+  <div class="sidebar-logo-container" :class="{ collapse }">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 v-else class="sidebar-title">{{ title }}</h1>
+        <h1 class="sidebar-title sidebar-title--short">SF</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
         <h1 class="sidebar-title">{{ title }}</h1>
       </router-link>
     </transition>
@@ -14,7 +12,6 @@
 </template>
 
 <script setup>
-import logo from '@/assets/logo/logo.png'
 import useSettingsStore from '@/store/modules/settings'
 import variables from '@/assets/styles/variables.module.scss'
 
@@ -29,7 +26,6 @@ const title = import.meta.env.VITE_APP_TITLE
 const settingsStore = useSettingsStore()
 const sideTheme = computed(() => settingsStore.sideTheme)
 
-// 获取Logo背景色
 const getLogoBackground = computed(() => {
   if (settingsStore.isDark) {
     return 'var(--sidebar-bg)'
@@ -40,7 +36,6 @@ const getLogoBackground = computed(() => {
   return sideTheme.value === 'theme-dark' ? variables.menuBg : variables.menuLightBg
 })
 
-// 获取Logo文字颜色
 const getLogoTextColor = computed(() => {
   if (settingsStore.isDark) {
     return 'var(--sidebar-logo-text)'
@@ -70,33 +65,27 @@ const getLogoTextColor = computed(() => {
   text-align: center;
   overflow: hidden;
 
-  & .sidebar-logo-link {
+  .sidebar-logo-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100%;
     width: 100%;
-
-    & .sidebar-logo {
-      width: 32px;
-      height: 32px;
-      vertical-align: middle;
-      margin-right: 12px;
-    }
-
-    & .sidebar-title {
-      display: inline-block;
-      margin: 0;
-      color: v-bind(getLogoTextColor);
-      font-weight: 600;
-      line-height: 56px;
-      font-size: 15px;
-      font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
-      vertical-align: middle;
-    }
+    text-decoration: none;
   }
 
-  &.collapse {
-    .sidebar-logo {
-      margin-right: 0px;
-    }
+  .sidebar-title {
+    margin: 0;
+    color: v-bind(getLogoTextColor);
+    font-weight: 700;
+    line-height: 56px;
+    font-size: 15px;
+    font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  }
+
+  .sidebar-title--short {
+    font-size: 16px;
+    letter-spacing: 0;
   }
 }
 </style>
