@@ -86,8 +86,8 @@
   .el-table__header-wrapper, .el-table__fixed-header-wrapper {
     th {
       word-break: break-word;
-      background-color: #f8f8f9 !important;
-      color: #515a6e;
+      background-color: #F9F8F6 !important;
+      color: #2C2621;
       height: 40px !important;
       font-size: 13px;
     }
@@ -102,8 +102,8 @@
 /** 表单布局 **/
 .form-header {
   font-size:15px;
-  color:#6379bb;
-  border-bottom:1px solid #ddd;
+  color:#C9B59C;
+  border-bottom:1px solid #D9CFC7;
   margin:8px 10px 25px 10px;
   padding-bottom:5px
 }
@@ -207,12 +207,12 @@
 }
 
 .el-card__header {
-  padding: 14px 15px 7px !important;
+  padding: 18px 24px 12px !important;
   min-height: 40px;
 }
 
 .el-card__body {
-  padding: 15px 20px 20px 20px !important;
+  padding: 20px 24px 24px 24px !important;
 }
 
 .card-box {
@@ -247,15 +247,15 @@
   }
   .el-drawer__header {
     margin-bottom: 6px;
-    padding: 8px 12px 6px;
+    padding: 12px 20px 10px;
     font-size: 15px;
-    color: #303133;
-    background: #f8f8f8;
+    color: #2C2621;
+    background: #F9F8F6;
   }
   .section-header {
     font-size: 15px;
-    color: #6379bb;
-    border-bottom: 1px solid #ddd;
+    color: #C9B59C;
+    border-bottom: 1px solid #D9CFC7;
     margin: 12px 0 16px 0;
     padding-bottom: 8px;
   }
@@ -296,21 +296,21 @@
 .detail-wrap { padding: 0 4px; }
 
 .detail-card {
-  border: 1px solid #ebeef5;
-  border-radius: 6px;
+  border: 1px solid #D9CFC7;
+  border-radius: 8px;
   margin-bottom: 14px;
   overflow: hidden;
 }
 
 .detail-card-title {
-  background: #f7f9fb;
-  padding: 8px 16px;
+  background: #F9F8F6;
+  padding: 10px 20px;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
-  border-bottom: 1px solid #ebeef5;
+  color: #2C2621;
+  border-bottom: 1px solid #D9CFC7;
 }
-.detail-card-title i { margin-right: 5px; color: #409EFF; }
+.detail-card-title i { margin-right: 5px; color: #C9B59C; }
 
 .detail-row { padding: 0 8px; }
 
@@ -319,7 +319,7 @@
   align-items: flex-start;
   padding: 10px 8px;
   font-size: 13px;
-  border-bottom: 1px solid #f5f7fa;
+  border-bottom: 1px solid #EFE9E3;
 }
 .detail-item:last-child { border-bottom: none; }
 

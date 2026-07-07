@@ -52,9 +52,6 @@
           <span v-if="!loading">登 录</span>
           <span v-else>登 录 中...</span>
         </el-button>
-        <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
-        </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
@@ -97,7 +94,6 @@ const loading = ref(false)
 // 验证码开关
 const captchaEnabled = ref(true)
 // 注册开关
-const register = ref(false)
 const redirect = ref(undefined)
 
 watch(route, (newRoute) => {
@@ -175,25 +171,31 @@ getCookie()
   background-size: cover;
 }
 .title {
-  margin: 0px auto 30px auto;
+  margin: 0px auto 32px auto;
   text-align: center;
-  color: #707070;
+  color: #2C2621;
+  font-weight: 600;
+  font-size: 22px;
 }
 
 .login-form {
-  border-radius: 6px;
-  background: #ffffff;
+  border-radius: 20px;
+  background: rgba(249, 248, 246, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   width: 400px;
-  padding: 25px 25px 5px 25px;
+  padding: 40px 36px 24px 36px;
   z-index: 1;
+  box-shadow: none;
+  border: 1px solid #EFE9E3;
   .el-input {
-    height: 40px;
+    height: 44px;
     input {
-      height: 40px;
+      height: 44px;
     }
   }
   .input-icon {
-    height: 39px;
+    height: 43px;
     width: 14px;
     margin-left: 0px;
   }
@@ -232,8 +234,14 @@ getCookie()
 html.dark .login {
   background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url("../assets/images/login-background.jpg");
   .login-form {
-    background: var(--el-bg-color-overlay) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    background: rgba(28, 26, 24, 0.9) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: none;
+    border: 1px solid #3d3833;
+  }
+  .title {
+    color: #efe9e3;
   }
 }
 </style>

@@ -1,306 +1,254 @@
 <template>
-  <div class="navbar" :class="'nav' + settingsStore.navType">
-    <hamburger id="hamburger-container" :is-active="appStore.sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
-    <breadcrumb v-if="settingsStore.navType == 1" id="breadcrumb-container" class="breadcrumb-container" />
-    <top-nav v-if="settingsStore.navType == 2" id="topmenu-container" class="topmenu-container" />
-    <template v-if="settingsStore.navType == 3">
-      <logo v-show="settingsStore.sidebarLogo" :collapse="false"></logo>
-      <top-bar id="topbar-container" class="topbar-container" />
-    </template>
+  <header class="top-nav">
+    <div class="nav-brand">
+      <router-link to="/" class="brand-link">
+        <span class="brand-name">{{ title }}</span>
+      </router-link>
+    </div>
 
-    <div class="right-menu">
-      <template v-if="appStore.device !== 'mobile'">
-        <header-search id="header-search" class="right-menu-item" />
+    <nav v-if="appStore.device !== 'mobile'" class="nav-menu">
+      <router-link
+        v-for="item in flatMenuItems"
+        :key="item.path"
+        :to="item.path"
+        :class="['nav-link', { active: isActive(item.path) }]"
+      >
+        <svg-icon v-if="item.icon" :icon-class="item.icon" class="nav-icon" />
+        <span>{{ item.title }}</span>
+      </router-link>
+    </nav>
 
-        <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="文档地址" effect="dark" placement="bottom">
-          <ruo-yi-doc id="ruoyi-doc" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <screenfull id="screenfull" class="right-menu-item hover-effect" />
-
-        <el-tooltip content="主题模式" effect="dark" placement="bottom">
-          <div class="right-menu-item hover-effect theme-switch-wrapper" @click="toggleTheme">
-            <svg-icon v-if="settingsStore.isDark" icon-class="sunny" />
-            <svg-icon v-if="!settingsStore.isDark" icon-class="moon" />
-          </div>
-        </el-tooltip>
-
-        <el-tooltip content="布局大小" effect="dark" placement="bottom">
-          <size-select id="size-select" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="消息通知" effect="dark" placement="bottom">
-          <header-notice id="header-notice" class="right-menu-item hover-effect" />
-        </el-tooltip>
-      </template>
-
-      <el-dropdown @command="handleCommand" class="avatar-container right-menu-item hover-effect" trigger="hover">
-        <div class="avatar-wrapper">
+    <div class="nav-actions">
+      <el-dropdown @command="handleCommand" trigger="click">
+        <div class="user-trigger">
           <img :src="userStore.avatar" class="user-avatar" />
-          <span class="user-nickname"> {{ userStore.nickName }} </span>
+          <span class="user-name">{{ userStore.nickName }}</span>
+          <el-icon><arrow-down /></el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <router-link to="/user/profile">
-              <el-dropdown-item>个人中心</el-dropdown-item>
-            </router-link>
-            <el-dropdown-item command="setLayout" v-if="settingsStore.showSettings">
-                <span>布局设置</span>
-            </el-dropdown-item>
-            <el-dropdown-item command="lockScreen">
-                <span>锁定屏幕</span>
-            </el-dropdown-item>
-            <el-dropdown-item divided command="logout">
+            <el-dropdown-item command="logout">
               <span>退出登录</span>
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
-  </div>
+  </header>
 </template>
 
 <script setup>
+import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
-import Breadcrumb from '@/components/Breadcrumb'
-import TopNav from './TopNav'
-import TopBar from './TopBar'
-import Logo from './Sidebar/Logo'
-import Hamburger from '@/components/Hamburger'
-import Screenfull from '@/components/Screenfull'
-import SizeSelect from '@/components/SizeSelect'
-import HeaderSearch from '@/components/HeaderSearch'
-import RuoYiGit from '@/components/RuoYi/Git'
-import RuoYiDoc from '@/components/RuoYi/Doc'
 import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
-import useLockStore from '@/store/modules/lock'
-import useSettingsStore from '@/store/modules/settings'
-import HeaderNotice from './HeaderNotice'
+import usePermissionStore from '@/store/modules/permission'
 
-const route = useRoute()
-const router = useRouter()
+const title = import.meta.env.VITE_APP_TITLE
 const appStore = useAppStore()
 const userStore = useUserStore()
-const lockStore = useLockStore()
-const settingsStore = useSettingsStore()
+const permissionStore = usePermissionStore()
+const route = useRoute()
+const router = useRouter()
 
-function toggleSideBar() {
-  appStore.toggleSideBar()
+const flatMenuItems = computed(() => {
+  const items = []
+  const routes = permissionStore.sidebarRouters.filter(r => !r.hidden && r.path !== '/redirect')
+
+  routes.forEach(r => {
+    if (!r.children || r.children.length === 0) {
+      items.push({
+        path: resolvePath(r.path),
+        title: r.meta?.title || r.name,
+        icon: r.meta?.icon
+      })
+    } else {
+      r.children.filter(c => !c.hidden).forEach(child => {
+        items.push({
+          path: resolveChildPath(r.path, child.path),
+          title: child.meta?.title || child.name,
+          icon: child.meta?.icon
+        })
+      })
+    }
+  })
+
+  return items
+})
+
+function resolvePath(path) {
+  if (!path) return '/'
+  return path.startsWith('/') ? path : '/' + path
+}
+
+function resolveChildPath(parentPath, childPath) {
+  if (childPath.startsWith('/')) return childPath
+  const parent = resolvePath(parentPath)
+  const child = '/' + childPath
+  return parent + child
+}
+
+function isActive(path) {
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 function handleCommand(command) {
-  switch (command) {
-    case "setLayout":
-      setLayout()
-      break
-    case "lockScreen":
-      lockScreen()
-      break
-    case "logout":
-      logout()
-      break
-    default:
-      break
-  }
-}
-
-function logout() {
-  ElMessageBox.confirm('确定注销并退出系统吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    userStore.logOut().then(() => {
-      location.href = '/index'
-    })
-  }).catch(() => { })
-}
-
-const emits = defineEmits(['setLayout'])
-function setLayout() {
-  emits('setLayout')
-}
-
-function lockScreen() {
-  const currentPath = route.fullPath
-  lockStore.lockScreen(currentPath)
-  router.push('/lock')
-}
-
-async function toggleTheme(event) {
-  const x = event?.clientX || window.innerWidth / 2
-  const y = event?.clientY || window.innerHeight / 2
-  const wasDark = settingsStore.isDark
-
-  const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  const isSupported = document.startViewTransition && !isReducedMotion
-
-  if (!isSupported) {
-    settingsStore.toggleTheme()
-    return
-  }
-
-  try {
-    const transition = document.startViewTransition(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      settingsStore.toggleTheme()
-      await nextTick()
-    })
-    await transition.ready
-
-    const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
-    const clipPath = [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`]
-    document.documentElement.animate(
-      {
-        clipPath: !wasDark ? [...clipPath].reverse() : clipPath
-      }, {
-        duration: 650,
-        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-        fill: "forwards",
-        pseudoElement: !wasDark ? "::view-transition-old(root)" : "::view-transition-new(root)"
-      }
-    )
-    await transition.finished
-  } catch (error) {
-    console.warn("View transition failed, falling back to immediate toggle:", error)
-    settingsStore.toggleTheme()
+  if (command === 'logout') {
+    ElMessageBox.confirm('确定注销并退出系统吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      userStore.logOut().then(() => {
+        location.href = '/index'
+      })
+    }).catch(() => {})
   }
 }
 </script>
 
-<style lang='scss' scoped>
-.navbar.nav3 {
-  .hamburger-container {
-    display: none !important;
+<style lang="scss" scoped>
+.top-nav {
+  height: 64px;
+  padding: 0 32px;
+  background: #F9F8F6;
+  border-bottom: 1px solid #EFE9E3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.nav-brand {
+  flex-shrink: 0;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+
+  .brand-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2C2621;
+    letter-spacing: 0;
   }
 }
 
-.navbar {
-  height: 50px;
-  overflow: hidden;
-  position: relative;
-  background: var(--navbar-bg);
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+.nav-menu {
   display: flex;
   align-items: center;
-  // padding: 0 8px;
-  box-sizing: border-box;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
 
-  .hamburger-container {
-    line-height: 46px;
-    height: 100%;
-    cursor: pointer;
-    transition: background 0.3s;
-    -webkit-tap-highlight-color: transparent;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    margin-right: 8px;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
 
-    &:hover {
-      background: rgba(0, 0, 0, 0.025);
-    }
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B6560;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .nav-icon {
+    font-size: 16px;
   }
 
-  .breadcrumb-container {
-    flex-shrink: 0;
+  &:hover {
+    color: #2C2621;
+    background: #EFE9E3;
   }
 
-  .topmenu-container {
-    position: absolute;
-    left: 50px;
+  &.active {
+    background: #2C2621;
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+.dropdown-icon {
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6B6560;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #EFE9E3;
+    color: #2C2621;
+  }
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #EFE9E3;
   }
 
-  .topbar-container {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    margin-left: 8px;
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
   }
 
-  .right-menu {
-    height: 100%;
-    line-height: 50px;
-    display: flex;
-    align-items: center;
-    margin-left: auto;
+  .user-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2C2621;
+  }
+}
 
-    &:focus {
-      outline: none;
-    }
+.menu-icon {
+  margin-right: 6px;
+}
 
-    .right-menu-item {
-      display: inline-block;
-      padding: 0 8px;
-      height: 100%;
-      font-size: 18px;
-      color: #5a5e66;
-      vertical-align: text-bottom;
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0 16px;
+  }
 
-      &.hover-effect {
-        cursor: pointer;
-        transition: background 0.3s;
-
-        &:hover {
-          background: rgba(0, 0, 0, 0.025);
-        }
-      }
-
-      &.theme-switch-wrapper {
-        display: flex;
-        align-items: center;
-
-        svg {
-          transition: transform 0.3s;
-          
-          &:hover {
-            transform: scale(1.15);
-          }
-        }
-      }
-    }
-
-    .avatar-container {
-      margin-right: 0px;
-      padding-right: 0px;
-
-      .avatar-wrapper {
-        margin-top: 10px;
-        right: 8px;
-        position: relative;
-
-        .user-avatar {
-          cursor: pointer;
-          width: 30px;
-          height: 30px;
-          margin-right: 8px;
-          border-radius: 50%;
-        }
-
-        .user-nickname{
-          position: relative;
-          left: 0px;
-          bottom: 10px;
-          font-size: 14px;
-          font-weight: bold;
-        }
-
-        i {
-          cursor: pointer;
-          position: absolute;
-          right: -20px;
-          top: 25px;
-          font-size: 12px;
-        }
-      }
-    }
+  .nav-menu {
+    display: none;
   }
 }
 </style>

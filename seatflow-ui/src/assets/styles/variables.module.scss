@@ -71,13 +71,23 @@ $--color-info: #909399;
   --sidebar-bg: #{$menuBg};
   --sidebar-text: #{$menuText};
   --menu-hover: #{$menuHover};
-  
+
   --navbar-bg: #ffffff;
   --navbar-text: #303133;
-  
+
   /* splitpanes default-theme 变量 */
   --splitpanes-default-bg: #ffffff;
 
+  /* SeatFlow 设计系统变量 */
+  --sf-bg: #F9F8F6;
+  --sf-text-primary: #2C2621;
+  --sf-text-secondary: #6B6560;
+  --sf-text-tertiary: #8A827A;
+  --sf-border: #D9CFC7;
+  --sf-radius-sm: 8px;
+  --sf-radius: 12px;
+  --sf-radius-lg: 16px;
+  --sf-radius-xl: 20px;
 }
 
 // 暗黑模式变量
@@ -134,6 +144,17 @@ html.dark {
 
   /* splitpanes default-theme 暗黑模式变量 */
   --splitpanes-default-bg: #141414;
+
+  /* SeatFlow 设计系统暗黑变量 */
+  --sf-bg: #1a1816;
+  --sf-text-primary: #efe9e3;
+  --sf-text-secondary: #a8a098;
+  --sf-text-tertiary: #7a756e;
+  --sf-border: #3d3833;
+  --sf-radius-sm: 8px;
+  --sf-radius: 12px;
+  --sf-radius-lg: 16px;
+  --sf-radius-xl: 20px;
 
   /* 侧边栏菜单覆盖 */
   .sidebar-container {
