@@ -56,7 +56,7 @@
 | `floorId` | number | 否 | 楼层 ID |
 | `roomId` | number | 否 | 自习室 ID |
 | `metric` | string | 否 | 指标，按具体接口限制取值 |
-| `slotType` | string | 否 | 热门时段粒度，第一版只支持 `hour` |
+| `slotType` | string | 否 | 热门时段粒度，支持 `hour`、`half_hour` |
 
 时间范围采用预约时间交集过滤：
 
@@ -143,7 +143,7 @@ GET /seatflow/report/heatmap?beginTime=2026-07-01%2000:00:00&endTime=2026-07-07%
 
 ## GET /seatflow/report/usage-rate
 
-按日期和自习室返回使用率。第一版只返回查询范围内有有效使用记录的日期和自习室。
+按日期和自习室返回使用率。查询范围内每一天、每个启用座位所在自习室都会返回；没有有效使用记录时，使用分钟数和使用率为 0。
 
 请求示例：
 
@@ -172,12 +172,12 @@ GET /seatflow/report/usage-rate?beginTime=2026-07-01%2000:00:00&endTime=2026-07-
 
 ## GET /seatflow/report/popular-slots
 
-返回热门时段。第一版固定按小时统计，时段格式为 `HH:00`。
+返回热门时段。支持按小时或半小时统计。`hour` 的时段格式为 `HH:00`，`half_hour` 的时段格式为 `HH:00` 或 `HH:30`。
 
 请求示例：
 
 ```http
-GET /seatflow/report/popular-slots?beginTime=2026-07-01%2000:00:00&endTime=2026-07-07%2023:59:59&slotType=hour
+GET /seatflow/report/popular-slots?beginTime=2026-07-01%2000:00:00&endTime=2026-07-07%2023:59:59&slotType=half_hour
 ```
 
 响应示例：
@@ -268,7 +268,7 @@ GET /seatflow/report/room-ranking?beginTime=2026-07-01%2000:00:00&endTime=2026-0
 | 开始时间晚于结束时间 | `开始时间不能晚于结束时间` |
 | 日期范围超过 31 天 | `查询时间范围不能超过31天` |
 | 指标参数非法 | `报表指标参数不合法` |
-| 热门时段粒度非法 | `热门时段第一版只支持按小时统计` |
+| 热门时段粒度非法 | `热门时段只支持按小时或半小时统计` |
 | 没有权限 | 由 RuoYi 权限拦截返回 |
 
 ## 自测记录
@@ -296,4 +296,4 @@ mvn -pl ruoyi-admin -am test
 - 停用座位不进入使用率分母。
 - `pending_checkin` 计入预约数，不计入有效使用分钟数。
 - `in_use`、`completed` 计入有效使用分钟数。
-- 热门时段按小时聚合，标签固定为 `HH:00`。
+- 热门时段支持按小时或半小时聚合，标签为 `HH:00` 或 `HH:30`。

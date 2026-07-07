@@ -33,7 +33,7 @@ public class ReportQuery
     @Schema(description = "统计指标：reservation_count 预约数，usage_minutes 使用分钟数，checkin_count 签到数，usage_rate 使用率", allowableValues = {"reservation_count", "usage_minutes", "checkin_count", "usage_rate"})
     private String metric;
 
-    @Schema(description = "时段类型，目前仅支持 hour", allowableValues = {"hour"}, example = "hour")
+    @Schema(description = "时段类型：hour 小时，half_hour 半小时", allowableValues = {"hour", "half_hour"}, example = "hour")
     private String slotType;
 
     public Date getBeginTime()
