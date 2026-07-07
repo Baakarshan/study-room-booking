@@ -57,6 +57,13 @@ cd seatflow-ui
 npm run smoke
 ```
 
+`npm run smoke` 会调用 `scripts/smoke/run.sh`，按顺序重置 `seatflow_smoke`、构建后端、启动 smoke profile 后端和前端，再执行 4 个 Playwright 串行场景。若需可视化观察浏览器，可运行：
+
+```bash
+cd seatflow-ui
+npm run smoke:headed
+```
+
 脚本仅允许重置名称包含 `smoke` 或 `test` 的数据库。测试结果与真实页面截图见 [实验报告](./docs/实验报告.md)。
 
 初始化表、演示账号、菜单权限和超时释放任务统一维护在 `sql/seatflow_20260702.sql`。模块自测记录位于 `docs/*-self-test.md`，整体验收范围见 [测试计划](./docs/test-plan.md)。

@@ -10,8 +10,8 @@
     "build:prod": "vite build",
     "build:stage": "vite build --mode staging",
     "lint:seatflow": "eslint \"src/views/seatflow/**/*.vue\" \"src/api/seatflow/**/*.js\" \"src/views/index.vue\"",
-    "smoke": "playwright test",
-    "smoke:headed": "playwright test --headed",
+    "smoke": "bash ../scripts/smoke/run.sh",
+    "smoke:headed": "bash ../scripts/smoke/run.sh --headed",
     "preview": "vite preview"
   },
   "repository": {
