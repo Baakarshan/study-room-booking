@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- ----------------------------
 -- SeatFlow 增量初始化脚本
 -- 先执行 RuoYi 原始 SQL 和 quartz.sql，再执行本文件。
