@@ -74,6 +74,7 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
     }
     requirePositiveId(query.getRoomId(), "请选择自习室");
     validateRange(query.getStartTime(), query.getEndTime());
+    validateFutureStart(query.getStartTime());
     return reservationMapper.selectSeatAvailability(query);
   }
 
@@ -87,9 +88,7 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
     requirePositiveId(request.getRoomId(), "请选择自习室");
     requirePositiveId(request.getSeatId(), "请选择座位");
     validateRange(request.getStartTime(), request.getEndTime());
-    if (!request.getStartTime().after(new Date())) {
-      throw new ServiceException("预约开始时间必须晚于当前时间");
-    }
+    validateFutureStart(request.getStartTime());
 
     LockedSeatVo seat = reservationMapper.selectSeatForUpdate(request.getSeatId());
     validateSeat(request, seat);
@@ -187,6 +186,12 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
   private void validateRange(Date startTime, Date endTime) {
     if (startTime == null || endTime == null || !startTime.before(endTime)) {
       throw new ServiceException("开始时间必须早于结束时间");
+    }
+  }
+
+  private void validateFutureStart(Date startTime) {
+    if (!startTime.after(new Date())) {
+      throw new ServiceException("预约开始时间必须晚于当前时间");
     }
   }
 

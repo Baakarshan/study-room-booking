@@ -12,6 +12,7 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.seatflow.common.SeatFlowReservationStatus;
 import com.ruoyi.seatflow.domain.dto.ReservationCreateRequest;
 import com.ruoyi.seatflow.domain.dto.ReservationManageQuery;
+import com.ruoyi.seatflow.domain.dto.SeatAvailabilityQuery;
 import com.ruoyi.seatflow.domain.vo.LockedSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationVo;
 import com.ruoyi.seatflow.mapper.SeatFlowReservationMapper;
@@ -76,6 +77,20 @@ class SeatFlowReservationServiceImplTest {
 
     assertEquals("预约开始时间必须晚于当前时间", exception.getMessage());
     verify(mapper, never()).selectSeatForUpdate(any());
+  }
+
+  @Test
+  void selectSeatAvailabilityRejectsPastStartTime() {
+    SeatAvailabilityQuery query = new SeatAvailabilityQuery();
+    query.setRoomId(1L);
+    query.setStartTime(toDate(LocalDateTime.now().minusMinutes(30)));
+    query.setEndTime(toDate(LocalDateTime.now().plusMinutes(30)));
+
+    ServiceException exception =
+        assertThrows(ServiceException.class, () -> service.selectSeatAvailability(query));
+
+    assertEquals("预约开始时间必须晚于当前时间", exception.getMessage());
+    verify(mapper, never()).selectSeatAvailability(any());
   }
 
   @Test
