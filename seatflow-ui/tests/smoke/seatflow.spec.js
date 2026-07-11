@@ -1,6 +1,9 @@
+/* global window */
 import { expect, test } from '@playwright/test'
 import {
   api,
+  captureExperiment,
+  captureExperimentElement,
   insertCheckinReadyReservation,
   insertEndedReservation,
   loginApi,
@@ -28,6 +31,8 @@ test.describe.serial('SeatFlow 课程项目主链路', () => {
     await page.goto('/seatflow/reservation-manage')
     await expect(page.getByRole('heading', { name: '预约管理' })).toBeVisible()
     await expect(page.getByText('学生一').first()).toBeVisible()
+    const completedSummary = page.locator('.summary-chip').filter({ hasText: '已完成' })
+    await expect(completedSummary.locator('strong')).toHaveText('2')
 
     await page.goto('/seatflow/report')
     await expect(page.getByText('预约数')).toBeVisible()
@@ -37,24 +42,45 @@ test.describe.serial('SeatFlow 课程项目主链路', () => {
   test('学生通过页面预约并取消', async ({ page }) => {
     await loginPage(page, 'student01')
     await page.goto('/seatflow/reservation')
-
-    await page.getByText('请选择校区', { exact: true }).click()
+    const campusField = page.locator('.el-form-item').filter({ hasText: '校区' })
+    await campusField.locator('.el-select__wrapper').click()
     await page.getByRole('option', { name: '主校区' }).click()
-    await page.getByText('请选择楼栋', { exact: true }).click()
-    await page.getByRole('option', { name: '第一教学楼' }).click()
-    await page.getByText('请选择楼层', { exact: true }).click()
-    await page.getByRole('option', { name: '二层' }).click()
-    await page.getByText('请选择自习室', { exact: true }).click()
-    await page.getByRole('option', { name: '教学楼 201 自习室' }).click()
-    await page.getByRole('button', { name: '明天 10:00-11:00' }).click()
+    await expect(page.getByPlaceholder('请选择日期')).not.toHaveValue('')
+    const startField = page.locator('.el-form-item').filter({ hasText: '开始时间' })
+    const endField = page.locator('.el-form-item').filter({ hasText: '结束时间' })
+    await expect(startField).toContainText(/\d{2}:\d{2}/)
+    await expect(endField).toContainText(/\d{2}:\d{2}/)
+    await captureExperiment(page, '08-reservation-default-time.png')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await captureExperiment(page, '13-reservation-mobile.png')
+    await page.setViewportSize({ width: 1280, height: 720 })
+
+    await page.getByRole('button', { name: '明天' }).click()
+    await startField.locator('.el-select__wrapper').click()
+    const availableTimes = page.locator('.el-select-dropdown:visible .el-select-dropdown__item')
+    await expect(availableTimes).not.toHaveCount(0)
+    const timeLabels = await availableTimes.allTextContents()
+    expect(timeLabels.every(label => label >= '08:00' && label <= '21:30')).toBe(true)
+    await captureExperiment(page, '09-reservation-time-options.png')
+    await page.keyboard.press('Escape')
+
     await page.getByRole('button', { name: '查询空闲座位' }).click()
-    await page.getByRole('button', { name: 'A03 available' }).click()
+    await page.getByRole('button', { name: 'A03 空闲' }).click()
+    await captureExperiment(page, '10-reservation-seat-selected.png')
     await page.getByRole('button', { name: '确认预约' }).click()
-    await page.getByRole('button', { name: /确\s*定/ }).click()
+    const confirmDialog = page.getByRole('dialog')
+    await expect(confirmDialog).toContainText('预约时间：')
+    await expect(confirmDialog).toContainText('开放时间：08:00 - 22:00')
+    await captureExperimentElement(confirmDialog, '11-reservation-confirm-dialog.png')
+    await confirmDialog.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('预约成功，可在“我的预约”中查看')).toBeVisible()
 
     await page.goto('/seatflow/my-reservation')
     await expect(page.getByText('待签到').first()).toBeVisible()
+    const pendingSummary = page.locator('.summary-card').filter({ hasText: '待签到' })
+    await expect(pendingSummary.locator('strong')).toHaveText('1')
+    await expect(page.locator('.reservation-list .el-loading-mask')).toBeHidden()
+    await captureExperiment(page, '12-my-reservation-summary.png')
     await page.getByRole('button', { name: '取消预约' }).click()
     await page.getByRole('button', { name: /确\s*定/ }).click()
     await expect(page.getByText('预约已取消')).toBeVisible()

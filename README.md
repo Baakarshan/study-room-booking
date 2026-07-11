@@ -64,6 +64,13 @@ cd seatflow-ui
 npm run smoke:headed
 ```
 
+需要生成 HTML 测试报告并更新实验报告截图时，运行：
+
+```bash
+cd seatflow-ui
+npm run smoke:report
+```
+
 脚本仅允许重置名称包含 `smoke` 或 `test` 的数据库。测试结果与真实页面截图见 [实验报告](./docs/实验报告.md)。
 
 初始化表、演示账号、菜单权限和超时释放任务统一维护在 `sql/seatflow_20260702.sql`。模块自测记录位于 `docs/*-self-test.md`，整体验收范围见 [测试计划](./docs/test-plan.md)。

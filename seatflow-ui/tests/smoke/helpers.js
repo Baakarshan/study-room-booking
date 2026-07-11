@@ -1,7 +1,27 @@
+/* global fetch, process */
 import mysql from 'mysql2/promise'
+import path from 'node:path'
 
 const backendUrl = process.env.SEATFLOW_SMOKE_BACKEND_URL || 'http://127.0.0.1:18080'
 const APP_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000
+const experimentImageDir = path.resolve(process.cwd(), '../docs/images/experiment')
+
+export async function captureExperiment(page, fileName, options = {}) {
+  if (process.env.SEATFLOW_CAPTURE_DOCS !== '1') return
+  await page.screenshot({
+    path: path.join(experimentImageDir, fileName),
+    fullPage: options.fullPage ?? true,
+    animations: 'disabled'
+  })
+}
+
+export async function captureExperimentElement(locator, fileName) {
+  if (process.env.SEATFLOW_CAPTURE_DOCS !== '1') return
+  await locator.screenshot({
+    path: path.join(experimentImageDir, fileName),
+    animations: 'disabled'
+  })
+}
 
 function formatAppDate(offsetMs = 0) {
   const date = new Date(Date.now() + offsetMs + APP_TIMEZONE_OFFSET_MS)

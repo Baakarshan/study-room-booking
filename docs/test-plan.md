@@ -95,7 +95,7 @@ Playwright 是测试工具链，不是服务器运行依赖。当前使用 4 个
 | 签到完成 | 页面签到、提前结束和 Quartz 自动完成 |
 | 冲突与信用 | 座位冲突、接口 403、三次爽约、拉黑和解除恢复 |
 
-运行 `cd seatflow-ui && npm run smoke` 会调用 `scripts/smoke/run.sh`，自动重置独立测试库、构建 `ruoyi-admin`、启动 smoke profile 后端和前端，再执行 Playwright。数据库名必须包含 `smoke` 或 `test`，否则重置脚本直接退出。需要可视化观察浏览器时，运行 `cd seatflow-ui && npm run smoke:headed`。预约时间、每日限次和状态枚举等细规则同时由 Service 单元测试覆盖。
+运行 `cd seatflow-ui && npm run smoke` 会调用 `scripts/smoke/run.sh`，自动重置独立测试库、构建 `ruoyi-admin`、启动 smoke profile 后端和前端，再执行 Playwright。数据库名必须包含 `smoke` 或 `test`，否则重置脚本直接退出。需要可视化观察浏览器时，运行 `npm run smoke:headed`；需要生成 HTML 报告并刷新实验截图时，运行 `npm run smoke:report`。HTML 报告写入 `seatflow-ui/test-results/report/`，关键成功态截图写入 `docs/images/experiment/`。预约时间、每日限次和状态枚举等细规则同时由 Service 单元测试覆盖。
 
 ## 部署冒烟
 

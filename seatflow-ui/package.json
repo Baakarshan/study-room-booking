@@ -12,6 +12,7 @@
     "lint:seatflow": "eslint \"src/views/seatflow/**/*.vue\" \"src/api/seatflow/**/*.js\" \"src/views/index.vue\"",
     "smoke": "bash ../scripts/smoke/run.sh",
     "smoke:headed": "bash ../scripts/smoke/run.sh --headed",
+    "smoke:report": "SEATFLOW_CAPTURE_DOCS=1 bash ../scripts/smoke/run.sh",
     "preview": "vite preview"
   },
   "repository": {
