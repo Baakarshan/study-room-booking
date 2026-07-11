@@ -46,16 +46,19 @@
         </el-form-item>
 
         <el-form-item label="预约日期">
-          <el-date-picker
-            v-model="reservationDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            format="YYYY-MM-DD"
-            placeholder="请选择日期"
-            :disabled="!selectedRoom"
-            :disabled-date="disableDate"
-            @change="dateChanged"
-          />
+          <div class="date-control">
+            <el-date-picker
+              v-model="reservationDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              format="YYYY-MM-DD"
+              placeholder="请选择日期"
+              :disabled="!selectedRoom"
+              :disabled-date="disableDate"
+              @change="dateChanged"
+            />
+            <el-button icon="Calendar" :disabled="!selectedRoom" @click="useTomorrow">明天</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="开始时间">
           <el-select v-model="startMinute" placeholder="请选择开始时间" :disabled="!reservationDate" @change="startChanged">
@@ -123,7 +126,7 @@
 </template>
 
 <script setup name="SeatFlowReservation">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fixMojibake } from '@/utils/text'
 import {
@@ -247,6 +250,13 @@ function dateChanged() {
   endMinute.value = defaultEndMinute(startMinute.value)
 }
 
+function useTomorrow() {
+  const now = appNowParts()
+  const today = `${now.year}-${pad(now.month)}-${pad(now.day)}`
+  reservationDate.value = addDays(today, 1)
+  dateChanged()
+}
+
 function startChanged() {
   resetSeats()
   endMinute.value = defaultEndMinute(startMinute.value)
@@ -363,9 +373,13 @@ async function submit() {
   const room = selectedRoom.value
   const seat = selectedSeat.value
   await ElMessageBox.confirm(
-    `确认预约 ${room.name} ${seat.seatNo}？预约时间：${displayTimeRange.value}（开放 ${shortTime(room.openTime)}-${shortTime(room.closeTime)}）`,
+    h('div', { class: 'reservation-confirm-details' }, [
+      h('strong', `${room.name} · ${seat.seatNo}`),
+      h('span', `预约时间：${displayTimeRange.value}`),
+      h('span', `开放时间：${shortTime(room.openTime)} - ${shortTime(room.closeTime)}`)
+    ]),
     '确认预约',
-    { type: 'info' }
+    { type: 'info', customClass: 'reservation-confirm-box' }
   )
   submitting.value = true
   try {
@@ -391,6 +405,8 @@ async function submit() {
 .seat-stats { display: flex; gap: 16px; b { color: var(--el-color-success); } }
 .selector-grid { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 0 16px; }
 .selector-grid :deep(.el-select), .selector-grid :deep(.el-date-editor) { width: 100%; }
+.date-control { display: flex; gap: 8px; width: 100%; }
+.date-control :deep(.el-date-editor) { min-width: 0; }
 .search-action { align-self: end; }
 .search-action .el-button { width: 100%; }
 .legend { display: flex; justify-content: center; gap: 24px; color: var(--el-text-color-secondary); font-size: 13px; }
@@ -411,6 +427,9 @@ async function submit() {
 .confirm-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--el-border-color-lighter); }
 .confirm-bar > div { display: flex; flex-direction: column; gap: 3px; }
 .confirm-bar small, .confirm-bar span { color: var(--el-text-color-secondary); }
+:global(.reservation-confirm-box) { width: min(480px, calc(100vw - 32px)); }
+:global(.reservation-confirm-details) { display: grid; gap: 6px; line-height: 1.6; }
+:global(.reservation-confirm-details strong) { color: var(--el-text-color-primary); }
 
 @media (max-width: 900px) {
   .hero { align-items: flex-start; }
