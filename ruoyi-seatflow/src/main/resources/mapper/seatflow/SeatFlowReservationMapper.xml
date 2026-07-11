@@ -121,6 +121,12 @@
         <if test="status != null and status != ''">and r.status = #{status}</if>
         order by r.start_time desc, r.reservation_id desc
     </select>
+    <select id="selectMyReservationStatusCounts" resultType="ReservationStatusCountVo">
+        select status, count(*) as count
+        from seatflow_reservation
+        where user_id = #{userId}
+        group by status
+    </select>
     <select id="selectManagedReservations" parameterType="ReservationManageQuery"
             resultMap="ReservationManageResult">
         select r.reservation_id, r.user_id, u.user_name, u.nick_name, p.student_no,
@@ -151,6 +157,33 @@
             <if test="endTime != null">and r.end_time &lt;= #{endTime}</if>
         </where>
         order by r.start_time desc, r.reservation_id desc
+    </select>
+    <select id="selectManagedReservationStatusCounts" parameterType="ReservationManageQuery"
+            resultType="ReservationStatusCountVo">
+        select r.status, count(*) as count
+        from seatflow_reservation r
+          inner join sys_user u on u.user_id = r.user_id
+          left join seatflow_user_profile p on p.user_id = r.user_id
+          inner join seatflow_seat s on s.seat_id = r.seat_id
+          inner join seatflow_room rm on rm.room_id = r.room_id
+          inner join seatflow_floor fl on fl.floor_id = rm.floor_id
+          inner join seatflow_building bd on bd.building_id = fl.building_id
+          inner join seatflow_campus cp on cp.campus_id = bd.campus_id
+        <where>
+            <if test="userName != null and userName != ''">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="studentNo != null and studentNo != ''">
+                and p.student_no like concat('%', #{studentNo}, '%')
+            </if>
+            <if test="campusId != null">and cp.campus_id = #{campusId}</if>
+            <if test="buildingId != null">and bd.building_id = #{buildingId}</if>
+            <if test="floorId != null">and fl.floor_id = #{floorId}</if>
+            <if test="roomId != null">and r.room_id = #{roomId}</if>
+            <if test="beginTime != null">and r.start_time &gt;= #{beginTime}</if>
+            <if test="endTime != null">and r.end_time &lt;= #{endTime}</if>
+        </where>
+        group by r.status
     </select>
     <select id="selectOwnedReservationForUpdate" resultMap="ReservationResult">
         select reservation_id, room_id, seat_id, start_time, end_time, check_deadline, status, cancel_time, create_time

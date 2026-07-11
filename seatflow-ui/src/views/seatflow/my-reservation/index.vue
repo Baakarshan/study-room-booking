@@ -34,15 +34,16 @@
 <script setup name="SeatFlowMyReservation">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { cancelReservation, listMyReservations } from '@/api/seatflow/reservation'
+import { cancelReservation, getMyReservationSummary, listMyReservations } from '@/api/seatflow/reservation'
 import { completeReservation } from '@/api/seatflow/control'
 
 const statuses = [{ value: 'pending_checkin', label: '待签到' }, { value: 'in_use', label: '使用中' }, { value: 'completed', label: '已完成' }, { value: 'cancelled', label: '已取消' }, { value: 'no_show', label: '已爽约' }]
 const filterOptions = [{ label: '全部', value: '' }, ...statuses]
 const query = reactive({ pageNum: 1, pageSize: 10, status: '' }), rows = ref([]), total = ref(0), loading = ref(false)
-const summary = computed(() => statuses.map(item => ({ ...item, count: rows.value.filter(row => row.status === item.value).length })))
+const summaryCounts = ref({})
+const summary = computed(() => statuses.map(item => ({ ...item, count: summaryCounts.value[item.value] || 0 })))
 onMounted(load)
-async function load() { loading.value = true; try { const res = await listMyReservations({ ...query, status: query.status || undefined }); rows.value = res.rows || []; total.value = res.total || 0 } finally { loading.value = false } }
+async function load() { loading.value = true; try { const [listRes, summaryRes] = await Promise.all([listMyReservations({ ...query, status: query.status || undefined }), getMyReservationSummary()]); rows.value = listRes.rows || []; total.value = listRes.total || 0; summaryCounts.value = Object.fromEntries((summaryRes.data || []).map(item => [item.status, Number(item.count) || 0])) } finally { loading.value = false } }
 function search() { query.pageNum = 1; load() }
 function filterStatus(status) { query.status = query.status === status ? '' : status; search() }
 function statusLabel(value) { return statuses.find(item => item.value === value)?.label || value }
@@ -56,4 +57,5 @@ async function complete(row) { await ElMessageBox.confirm('结束后将释放座
 .page-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; h2 { margin: 0 0 6px; font-size: 22px; } p { margin: 0; color: var(--el-text-color-secondary); } }
 .summary-row { margin-bottom: 4px; }.summary-card { margin-bottom: 12px; cursor: pointer; :deep(.el-card__body) { display: flex; align-items: baseline; justify-content: space-between; } strong { color: var(--el-color-primary); font-size: 24px; } span { color: var(--el-text-color-secondary); } }.summary-card.selected { border-color: var(--el-color-primary); background: var(--el-color-primary-light-9); }
 .toolbar { margin-bottom: 16px; overflow-x: auto; }.subtext { margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; }
+.reservation-list :deep(.el-table__empty-block) { min-height: 120px; }
 </style>

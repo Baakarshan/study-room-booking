@@ -82,12 +82,28 @@ public class SeatFlowReservationController extends BaseController {
     return getDataTable(reservationService.selectMyReservations(query));
   }
 
+  @Operation(summary = "统计我的预约状态")
+  @PreAuthorize("@ss.hasPermi('seatflow:reservation:mine')")
+  @GetMapping("/mine/summary")
+  public AjaxResult mineSummary() {
+    return AjaxResult.success(
+        reservationService.selectMyReservationStatusCounts(SecurityUtils.getUserId()));
+  }
+
   @Operation(summary = "管理端分页查询全部预约")
   @PreAuthorize("@ss.hasPermi('seatflow:reservation:list')")
   @GetMapping("/manage")
   public TableDataInfo manage(@ParameterObject ReservationManageQuery query) {
     startPage();
     return getDataTable(reservationService.selectManagedReservations(query));
+  }
+
+  @Operation(summary = "统计管理端预约状态")
+  @PreAuthorize("@ss.hasPermi('seatflow:reservation:list')")
+  @GetMapping("/manage/summary")
+  public AjaxResult manageSummary(@ParameterObject ReservationManageQuery query) {
+    query.setStatus(null);
+    return AjaxResult.success(reservationService.selectManagedReservationStatusCounts(query));
   }
 
   @Operation(summary = "取消我的预约")

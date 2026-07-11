@@ -10,6 +10,7 @@ import com.ruoyi.seatflow.domain.vo.LockedSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationManageVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSpaceVo;
+import com.ruoyi.seatflow.domain.vo.ReservationStatusCountVo;
 import com.ruoyi.seatflow.domain.vo.ReservationVo;
 import com.ruoyi.seatflow.mapper.SeatFlowReservationMapper;
 import com.ruoyi.seatflow.service.ISeatFlowReservationService;
@@ -129,21 +130,22 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
   }
 
   @Override
+  public List<ReservationStatusCountVo> selectMyReservationStatusCounts(Long userId) {
+    requirePositiveId(userId, "当前用户不存在");
+    return reservationMapper.selectMyReservationStatusCounts(userId);
+  }
+
+  @Override
   public List<ReservationManageVo> selectManagedReservations(ReservationManageQuery query) {
-    if (query == null) {
-      throw new ServiceException("查询参数不能为空");
-    }
-    validateOptionalId(query.getCampusId());
-    validateOptionalId(query.getBuildingId());
-    validateOptionalId(query.getFloorId());
-    validateOptionalId(query.getRoomId());
-    validateStatus(query.getStatus());
-    if (query.getBeginTime() != null
-        && query.getEndTime() != null
-        && query.getBeginTime().after(query.getEndTime())) {
-      throw new ServiceException("开始时间不能晚于结束时间");
-    }
+    validateManageQuery(query, true);
     return reservationMapper.selectManagedReservations(query);
+  }
+
+  @Override
+  public List<ReservationStatusCountVo> selectManagedReservationStatusCounts(
+      ReservationManageQuery query) {
+    validateManageQuery(query, false);
+    return reservationMapper.selectManagedReservationStatusCounts(query);
   }
 
   @Override
@@ -220,6 +222,24 @@ public class SeatFlowReservationServiceImpl implements ISeatFlowReservationServi
   private void validateStatus(String status) {
     if (status != null && !status.isBlank() && !RESERVATION_STATUSES.contains(status)) {
       throw new ServiceException("预约状态不合法");
+    }
+  }
+
+  private void validateManageQuery(ReservationManageQuery query, boolean validateStatus) {
+    if (query == null) {
+      throw new ServiceException("查询参数不能为空");
+    }
+    validateOptionalId(query.getCampusId());
+    validateOptionalId(query.getBuildingId());
+    validateOptionalId(query.getFloorId());
+    validateOptionalId(query.getRoomId());
+    if (validateStatus) {
+      validateStatus(query.getStatus());
+    }
+    if (query.getBeginTime() != null
+        && query.getEndTime() != null
+        && query.getBeginTime().after(query.getEndTime())) {
+      throw new ServiceException("开始时间不能晚于结束时间");
     }
   }
 

@@ -448,7 +448,7 @@ async function loadAllData() {
       fetchFloors(),
       fetchRooms()
     ])
-  } catch (err) {
+  } catch {
     ElMessage.error('加载基础数据失败')
   } finally {
     loading.value = false
@@ -508,8 +508,9 @@ async function submitForm() {
       if (dialogType.value === 'seat') {
         fetchSeats()
       }
-    } catch (err) {
+    } catch {
       // Axios interceptor will show the error message
+      return
     }
   })
 }
@@ -527,8 +528,10 @@ async function handleDelete(type, row) {
       await request.delete(`/seatflow/base/${type}/${id}`)
       ElMessage.success('删除成功')
       loadAllData()
-    } catch (err) {}
-  }).catch(() => {})
+    } catch {
+      return
+    }
+  }).catch(() => undefined)
 }
 
 async function handleBatchGenerate() {
@@ -546,7 +549,7 @@ async function handleBatchGenerate() {
     } finally {
       loading.value = false
     }
-  }).catch(() => {})
+  }).catch(() => undefined)
 }
 
 async function toggleSeatStatus(seat) {
@@ -555,7 +558,9 @@ async function toggleSeatStatus(seat) {
     await request.put(`/seatflow/base/seat/${seat.seatId}/status/${newStatus}`)
     seat.status = newStatus
     ElMessage.success(`座位 ${seat.seatNo} 已${newStatus === 'enabled' ? '启用' : '停用'}`)
-  } catch (err) {}
+  } catch {
+    return
+  }
 }
 </script>
 

@@ -55,7 +55,7 @@
 <script setup name="SeatFlowReservationManage">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { fixMojibake } from '@/utils/text'
-import { listReservationCampuses, listReservationBuildings, listReservationFloors, listReservationRooms, listManagedReservations } from '@/api/seatflow/reservation'
+import { getManagedReservationSummary, listReservationCampuses, listReservationBuildings, listReservationFloors, listReservationRooms, listManagedReservations } from '@/api/seatflow/reservation'
 
 const statuses = [
   { value: 'pending_checkin', label: '待签到' }, { value: 'in_use', label: '使用中' },
@@ -65,7 +65,8 @@ const statuses = [
 const query = reactive({ pageNum: 1, pageSize: 10, userName: undefined, studentNo: undefined, campusId: undefined, buildingId: undefined, floorId: undefined, roomId: undefined, status: undefined })
 const rows = ref([]), total = ref(0), loading = ref(false), dateRange = ref([])
 const campuses = ref([]), buildings = ref([]), floors = ref([]), rooms = ref([])
-const statusSummary = computed(() => statuses.map(item => ({ ...item, count: rows.value.filter(row => row.status === item.value).length })))
+const summaryCounts = ref({})
+const statusSummary = computed(() => statuses.map(item => ({ ...item, count: summaryCounts.value[item.value] || 0 })))
 const normalizeOption = item => ({ ...item, name: fixMojibake(item.name) })
 
 async function campusChanged(id) { Object.assign(query, { buildingId: undefined, floorId: undefined, roomId: undefined }); buildings.value = id ? (((await listReservationBuildings(id)).data) || []).map(normalizeOption) : []; floors.value = []; rooms.value = [] }
@@ -75,8 +76,10 @@ async function load() {
   loading.value = true
   try {
     const params = { ...query, beginTime: dateRange.value?.[0] ? `${dateRange.value[0]} 00:00:00` : undefined, endTime: dateRange.value?.[1] ? `${dateRange.value[1]} 23:59:59` : undefined }
-    const res = await listManagedReservations(params)
-    rows.value = res.rows || []; total.value = res.total || 0
+    const summaryParams = { ...params, pageNum: undefined, pageSize: undefined, status: undefined }
+    const [listRes, summaryRes] = await Promise.all([listManagedReservations(params), getManagedReservationSummary(summaryParams)])
+    rows.value = listRes.rows || []; total.value = listRes.total || 0
+    summaryCounts.value = Object.fromEntries((summaryRes.data || []).map(item => [item.status, Number(item.count) || 0]))
   } finally { loading.value = false }
 }
 function search() { query.pageNum = 1; load() }

@@ -8,6 +8,7 @@ import com.ruoyi.seatflow.domain.vo.LockedSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationManageVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSeatVo;
 import com.ruoyi.seatflow.domain.vo.ReservationSpaceVo;
+import com.ruoyi.seatflow.domain.vo.ReservationStatusCountVo;
 import com.ruoyi.seatflow.domain.vo.ReservationVo;
 import java.util.Date;
 import java.util.List;
@@ -50,7 +51,11 @@ public interface SeatFlowReservationMapper {
 
   List<ReservationVo> selectMyReservations(MyReservationQuery query);
 
+  List<ReservationStatusCountVo> selectMyReservationStatusCounts(@Param("userId") Long userId);
+
   List<ReservationManageVo> selectManagedReservations(ReservationManageQuery query);
+
+  List<ReservationStatusCountVo> selectManagedReservationStatusCounts(ReservationManageQuery query);
 
   ReservationVo selectOwnedReservationForUpdate(
       @Param("reservationId") Long reservationId, @Param("userId") Long userId);

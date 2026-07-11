@@ -55,9 +55,24 @@ export function listMyReservations(query) {
   })
 }
 
+export function getMyReservationSummary() {
+  return request({
+    url: '/seatflow/reservation/mine/summary',
+    method: 'get'
+  })
+}
+
 export function listManagedReservations(query) {
   return request({
     url: '/seatflow/reservation/manage',
+    method: 'get',
+    params: query
+  })
+}
+
+export function getManagedReservationSummary(query) {
+  return request({
+    url: '/seatflow/reservation/manage/summary',
     method: 'get',
     params: query
   })
