@@ -117,6 +117,36 @@ const slotChartRef = ref()
 const rankingChartRef = ref()
 const heatmapChartRef = ref()
 const charts = {}
+const mojibakePattern = /[ÃÂâäåæçèéœŒ™]/
+const windows1252Bytes = {
+  '€': 0x80,
+  '‚': 0x82,
+  'ƒ': 0x83,
+  '„': 0x84,
+  '…': 0x85,
+  '†': 0x86,
+  '‡': 0x87,
+  'ˆ': 0x88,
+  '‰': 0x89,
+  'Š': 0x8a,
+  '‹': 0x8b,
+  'Œ': 0x8c,
+  'Ž': 0x8e,
+  '‘': 0x91,
+  '’': 0x92,
+  '“': 0x93,
+  '”': 0x94,
+  '•': 0x95,
+  '–': 0x96,
+  '—': 0x97,
+  '˜': 0x98,
+  '™': 0x99,
+  'š': 0x9a,
+  '›': 0x9b,
+  'œ': 0x9c,
+  'ž': 0x9e,
+  'Ÿ': 0x9f
+}
 
 const summaryItems = computed(() => [
   { label: '预约数', value: summary.reservationCount ?? 0 },
@@ -141,6 +171,45 @@ function formatDate(date) {
 
 function formatRate(value) {
   return `${((Number(value) || 0) * 100).toFixed(1)}%`
+}
+
+function countCjk(value) {
+  return (value.match(/[\u3400-\u9fff]/g) || []).length
+}
+
+function decodeMojibake(value) {
+  if (typeof value !== 'string' || !mojibakePattern.test(value)) return value
+  const bytes = []
+  for (const char of value) {
+    const code = char.charCodeAt(0)
+    if (code <= 0xff) {
+      bytes.push(code)
+    } else if (windows1252Bytes[char] !== undefined) {
+      bytes.push(windows1252Bytes[char])
+    } else {
+      return value
+    }
+  }
+  try {
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))
+    return countCjk(decoded) > countCjk(value) ? decoded : value
+  } catch {
+    return value
+  }
+}
+
+function normalizeTextRows(rows, fields) {
+  return rows.map(item => {
+    const next = { ...item }
+    fields.forEach(field => {
+      next[field] = decodeMojibake(next[field])
+    })
+    return next
+  })
+}
+
+function normalizeSpaceOptions(rows) {
+  return normalizeTextRows(rows || [], ['name'])
 }
 
 function baseQuery() {
@@ -176,10 +245,10 @@ async function loadReport() {
     ])
     Object.assign(summary, summaryRes.data || {})
     await nextTick()
-    renderUsage(usageRes.data || [])
+    renderUsage(normalizeTextRows(usageRes.data || [], ['roomName']))
     renderSlots(slotsRes.data || [])
-    renderRanking(rankingRes.data || [])
-    renderHeatmap(heatmapRes.data || [])
+    renderRanking(normalizeTextRows(rankingRes.data || [], ['roomName']))
+    renderHeatmap(normalizeTextRows(heatmapRes.data || [], ['roomName', 'seatNo']))
   } finally {
     loading.value = false
   }
@@ -187,12 +256,12 @@ async function loadReport() {
 
 async function loadRanking() {
   const res = await getRoomRanking({ ...baseQuery(), metric: rankingMetric.value })
-  renderRanking(res.data || [])
+  renderRanking(normalizeTextRows(res.data || [], ['roomName']))
 }
 
 async function loadHeatmap() {
   const res = await getSeatHeatmap({ ...baseQuery(), metric: heatmapMetric.value })
-  renderHeatmap(res.data || [])
+  renderHeatmap(normalizeTextRows(res.data || [], ['roomName', 'seatNo']))
 }
 
 function renderUsage(rows) {
@@ -260,15 +329,15 @@ function resetFilters() {
 
 async function campusChanged(id) {
   Object.assign(filters, { buildingId: undefined, floorId: undefined, roomId: undefined })
-  buildings.value = id ? (await listReservationBuildings(id)).data || [] : []; floors.value = []; rooms.value = []
+  buildings.value = id ? normalizeSpaceOptions((await listReservationBuildings(id)).data) : []; floors.value = []; rooms.value = []
 }
 async function buildingChanged(id) {
   Object.assign(filters, { floorId: undefined, roomId: undefined })
-  floors.value = id ? (await listReservationFloors(id)).data || [] : []; rooms.value = []
+  floors.value = id ? normalizeSpaceOptions((await listReservationFloors(id)).data) : []; rooms.value = []
 }
 async function floorChanged(id) {
   filters.roomId = undefined
-  rooms.value = id ? (await listReservationRooms(id)).data || [] : []
+  rooms.value = id ? normalizeSpaceOptions((await listReservationRooms(id)).data) : []
 }
 
 function disableFutureDate(date) {
@@ -281,7 +350,7 @@ function resizeCharts() {
 
 onMounted(() => {
   window.addEventListener('resize', resizeCharts)
-  listReservationCampuses().then(res => { campuses.value = res.data || [] })
+  listReservationCampuses().then(res => { campuses.value = normalizeSpaceOptions(res.data) })
   loadReport()
 })
 
